@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>OUTPOST-7 — Alien Mining Idle</title>
+<style>
+:root{--bg:#070912;--panel:rgba(8,11,20,.86);--line:rgba(255,255,255,.10);--text:#edf5ff;--muted:#91a1b5;--gold:#ffd277}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text)}canvas{display:block}button{font:inherit}
+#game{position:fixed;inset:0}#ui{position:fixed;inset:0;z-index:4;pointer-events:none}.panel{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(14px);box-shadow:0 14px 40px rgba(0,0,0,.28)}
+#top{position:absolute;left:18px;right:18px;top:16px;display:flex;align-items:stretch;gap:10px}.brand{padding:10px 14px;border-radius:15px;min-width:200px}.brand b{display:block;font-size:14px;letter-spacing:.18em}.brand small{font-size:10px;color:var(--muted)}
+.stat{padding:8px 12px;border-radius:15px;min-width:104px}.stat .k{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}.stat .v{font-size:17px;font-weight:850;margin-top:3px}
+#speed{margin-left:auto;display:flex;gap:6px;padding:7px;border-radius:15px;pointer-events:auto}#speed button,.buy{border:1px solid var(--line);border-radius:9px;cursor:pointer}#speed button{padding:8px 10px;background:rgba(255,255,255,.055);color:var(--text)}#speed button.active{background:#edf5ff;color:#080b11}
+#mission{position:absolute;left:18px;top:92px;width:282px;border-radius:16px;padding:14px}#mission h3{margin:0 0 9px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#c6d5e5}#mission .txt{font-size:13px;line-height:1.5}#mission .txt strong{color:var(--gold)}#mission .hint{font-size:10px;line-height:1.5;color:var(--muted);margin-top:10px}
+#manage{position:absolute;right:18px;top:92px;width:365px;max-height:calc(100vh - 120px);overflow:auto;border-radius:16px;padding:14px;pointer-events:auto}#manage::-webkit-scrollbar{width:8px}#manage::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
+.sel{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px}.sel .title{font-size:20px;font-weight:900}.sel .sub{font-size:10px;color:var(--muted)}.badge{padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.08);font-size:9px;white-space:nowrap}
+.infoRow{display:flex;justify-content:space-between;gap:10px;border-top:1px solid rgba(255,255,255,.07);padding:7px 0;font-size:11px}.infoRow span{color:var(--muted)}.section{margin:13px 0 4px;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+.upgrade{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.07)}.upgrade .n{font-size:12px;font-weight:800}.upgrade .d{font-size:9px;color:var(--muted);margin-top:2px}.buy{min-width:92px;padding:9px;border:0;background:#edf5ff;color:#0b1016;font-size:11px;font-weight:900;user-select:none;touch-action:manipulation;transition:transform .08s,filter .12s}.buy:active{transform:scale(.96)}.buy:hover:not(:disabled){filter:brightness(1.08)}.buy.unlock{background:var(--gold)}.buy:disabled{opacity:.32;cursor:not-allowed}.buy.maxed{background:rgba(255,255,255,.10);color:var(--muted)}
+#strip{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto;max-width:calc(100vw - 370px);overflow-x:auto;padding:3px 2px 7px;scrollbar-width:thin}.card{width:150px;padding:9px 10px;border-radius:13px;background:rgba(8,11,20,.84);border:1px solid var(--line);backdrop-filter:blur(12px);cursor:pointer;transition:.15s transform}.card:hover{transform:translateY(-3px)}.card.selected{outline:2px solid rgba(255,255,255,.75)}.card.locked{filter:saturate(.4);opacity:.82}.card .topline{display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:850}.card .sub{font-size:9px;color:var(--muted);margin-top:2px}.bar{height:5px;background:rgba(255,255,255,.08);overflow:hidden;border-radius:999px;margin-top:7px}.bar i{height:100%;display:block;background:#edf5ff}
+.label{position:absolute;transform:translate(-50%,-100%);padding:5px 7px;background:rgba(5,7,13,.80);border:1px solid rgba(255,255,255,.09);border-radius:8px;font-size:9px;white-space:nowrap;pointer-events:none}.label b{font-size:10px}.label.locked{opacity:.63}#toasts{position:absolute;left:50%;top:84px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center}.toast{padding:8px 12px;border-radius:999px;background:rgba(6,9,16,.93);border:1px solid var(--line);font-size:10px;animation:toast 2.4s ease forwards}@keyframes toast{0%{opacity:0;transform:translateY(-6px)}15%,75%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-5px)}}
+#help{position:absolute;left:18px;bottom:17px;font-size:9px;color:rgba(255,255,255,.5)}#reset{width:100%;margin-top:12px;padding:8px;border:1px solid rgba(255,125,125,.24);border-radius:9px;background:transparent;color:#ffaaaa;cursor:pointer}
+.fleetCard{border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;margin-top:8px;background:rgba(255,255,255,.025)}
+.fleetTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.fleetTop b{font-size:12px}.fleetTop small{display:block;color:var(--muted);font-size:9px;margin-top:2px;line-height:1.35}
+.fleetCount{font-size:9px;border-radius:999px;padding:4px 7px;background:rgba(255,255,255,.08);white-space:nowrap}
+.fleetStats{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.fleetStats span{font-size:8px;color:#cbd6df;border:1px solid rgba(255,255,255,.07);border-radius:999px;padding:3px 6px}
+.fleetBuy{display:flex;gap:6px;margin-top:8px}
+.fleetBuy .buy{flex:1}
+.transportHint{font-size:9px;line-height:1.4;color:var(--muted);margin-top:6px}
+.tabs{display:flex;gap:6px;margin:8px 0 12px}.tab{flex:1;padding:8px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.035);color:var(--muted);cursor:pointer;font-size:10px;font-weight:850}.tab.active{background:rgba(255,255,255,.12);color:var(--text)}
+.statusLine{margin:8px 0 4px;padding:8px 9px;border:1px solid rgba(255,255,255,.07);border-radius:10px;background:rgba(255,255,255,.025);font-size:9px;line-height:1.45;color:var(--muted)}.statusLine b{color:var(--text)}
+.stockBar{height:7px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden;margin:7px 0 3px}.stockBar i{display:block;height:100%;background:#dce8f4}.stockBar.full i{background:#ffd277}
+.fleetCard .upgrade{padding:8px 0}.fleetCard .buy{min-width:104px;padding:8px}.compat{margin-top:7px;font-size:9px;line-height:1.45;color:#b9c7d4}.compat b{color:#e7eef5}
+.priorityBox{margin-top:8px;border-top:1px solid rgba(255,255,255,.07);padding-top:7px}.priorityBox summary{cursor:pointer;font-size:9px;color:#cbd7e2;user-select:none}.priorityGrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}.priorityBtn{padding:6px 7px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);color:#cbd6df;cursor:pointer;font-size:8px;text-align:left}.priorityBtn.p2{background:rgba(255,210,119,.14);border-color:rgba(255,210,119,.28);color:#ffe2a2}.priorityBtn.p0{opacity:.48}
+.miniNote{font-size:8px;color:var(--muted);line-height:1.45;margin-top:6px}
+.moneyGain{position:absolute;z-index:8;transform:translate(-50%,-50%);font-size:15px;font-weight:950;color:#ffe18c;text-shadow:0 2px 8px #000;pointer-events:none;white-space:nowrap}
+#loading{position:fixed;inset:0;z-index:10;background:#070912;display:grid;place-items:center;text-align:center}#loading b{font-size:20px;letter-spacing:.18em}#loading small{display:block;color:#7f91a5;margin-top:7px}
+.energyStat.warn .v{color:#ffd277}.energyStat.critical .v{color:#ff9b8e}.processGlow{animation:pulseGlow 1.1s ease-in-out infinite alternate}@keyframes pulseGlow{from{opacity:.55}to{opacity:1}}
+#eventFeed{position:absolute;left:18px;top:226px;width:282px;border-radius:15px;padding:11px 12px;overflow:hidden}.eventHead{display:flex;align-items:center;justify-content:space-between;gap:8px}.eventHead b{font-size:9px;letter-spacing:.15em;text-transform:uppercase}.eventKind{font-size:8px;color:var(--muted);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:3px 6px}.eventActive{margin-top:7px;font-size:11px;line-height:1.4}.eventActive strong{color:#ffe2a2}.eventTimer{font-size:9px;color:var(--muted);margin-top:3px}.eventHistory{margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.07);font-size:8px;line-height:1.45;color:var(--muted)}
+#eventTint{position:absolute;inset:0;z-index:-1;opacity:0;transition:opacity .8s;pointer-events:none}#eventTint.dust{opacity:.13;background:linear-gradient(120deg,rgba(180,118,88,.38),rgba(96,61,91,.10));animation:eventDust 4s ease-in-out infinite alternate}#eventTint.em{opacity:.10;background:radial-gradient(circle at 60% 20%,rgba(126,97,255,.46),transparent 48%);animation:eventEM 1.4s ease-in-out infinite alternate}@keyframes eventDust{from{filter:brightness(.96)}to{filter:brightness(1.06)}}@keyframes eventEM{from{opacity:.055}to{opacity:.13}}
+.maintWarn{color:#ffd277}.eventGood{color:#9ff2c8}.eventBad{color:#ffb29f}
+.exploreGood{color:#9ff2c8}.exploreWarn{color:#ffe2a2}.signalCard{border:1px solid rgba(135,185,255,.13);border-radius:12px;padding:10px;margin-top:8px;background:linear-gradient(135deg,rgba(94,112,177,.07),rgba(255,255,255,.018))}.signalCode{font-size:9px;letter-spacing:.14em;color:#aebee2}.techList{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.techChip{font-size:8px;padding:4px 7px;border-radius:999px;border:1px solid rgba(159,242,200,.17);background:rgba(159,242,200,.055);color:#bff3d8}.discoveryPulse{animation:discoverPulse .72s ease-in-out infinite alternate}@keyframes discoverPulse{from{filter:brightness(.82)}to{filter:brightness(1.22)}}
+@media(max-width:900px){#mission,#eventFeed{display:none}.brand{display:none}#top{left:10px;right:10px;top:10px}.stat{min-width:86px;padding:7px 8px}.stat .v{font-size:14px}#manage{right:10px;top:76px;width:300px}.card{min-width:126px;width:126px}#strip{max-width:96vw;overflow:auto;bottom:8px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="loading"><div><b>OUTPOST-7</b><small>Estabelecendo enlace orbital...</small></div></div>
+<div id="ui">
+  <div id="top">
+    <div class="brand panel"><b>OUTPOST-7</b><small>EXOPLANET MINING DIVISION</small></div>
+    <div class="stat panel"><div class="k">Créditos</div><div class="v" id="money">$0</div></div>
+    <div class="stat panel"><div class="k">Renda / min</div><div class="v" id="income">$0</div></div>
+    <div class="stat panel"><div class="k">Entregas</div><div class="v" id="deliveries">0</div></div>
+    <div class="stat panel energyStat"><div class="k">Energia</div><div class="v" id="energy">0 / 0</div></div>
+    <div class="stat panel"><div class="k">Exploração</div><div class="v" id="surveyHud">OFFLINE</div></div>
+    <div id="speed" class="panel"><button data-s="0">❚❚</button><button data-s="1" class="active">1×</button><button data-s="2">2×</button><button data-s="4">4×</button></div>
+  </div>
+  <div id="mission" class="panel"><h3>Missão da colônia</h3><div class="txt" id="objective">Extraia e entregue a primeira caixa de <strong>Basalto</strong>.</div><div class="hint">Novos depósitos não aparecem por botão: sinais surgem no planeta, o drone investiga e só então a operação pode ser instalada. Distância, indústria e logística passam a importar juntas.</div></div>
+  <div id="eventFeed" class="panel"><div class="eventHead"><b>Acontecimentos</b><span class="eventKind" id="eventKind">ROTINA</span></div><div class="eventActive" id="eventActive">Nenhum evento extraordinário no momento.</div><div class="eventTimer" id="eventTimer">A colônia opera normalmente.</div><div class="eventHistory" id="eventHistory">Os eventos serão ocasionais e não exigem microgerenciamento.</div></div>
+  <div id="eventTint"></div>
+  <div id="manage" class="panel"></div><div id="strip"></div><div id="toasts"></div><div id="help">Arraste: girar câmera • Rodinha: zoom • Clique numa formação descoberta para gerenciar <span id="memDiag"></span></div>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+const $=s=>document.querySelector(s),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,fmt=n=>'$'+Math.floor(n).toLocaleString('pt-BR');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x17142a);scene.fog=new THREE.FogExp2(0x241d39,.0115);
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.1,350);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;$('#game').appendChild(renderer.domElement);
+const hemi=new THREE.HemisphereLight(0xb6bdff,0x25152e,1.65);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffd5b3,3.7);sun.position.set(-38,54,28);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-75;sun.shadow.camera.right=75;sun.shadow.camera.top=75;sun.shadow.camera.bottom=-75;scene.add(sun);const rim=new THREE.DirectionalLight(0x6e8cff,1.4);rim.position.set(50,18,-50);scene.add(rim);const moonLight=new THREE.DirectionalLight(0x7fa8ff,.18);moonLight.position.set(45,45,50);scene.add(moonLight);
+function mat(c,r=.82,m=.04,e=0,ei=0){return new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m,emissive:e,emissiveIntensity:ei})}function mesh(g,c,r=.82,m=.04,e=0,ei=0){const x=new THREE.Mesh(g,mat(c,r,m,e,ei));x.castShadow=true;x.receiveShadow=true;return x}function box(w,h,d,c,r,m,e,ei){return mesh(new THREE.BoxGeometry(w,h,d),c,r,m,e,ei)}function cyl(rt,rb,h,s,c,r,m,e,ei){return mesh(new THREE.CylinderGeometry(rt,rb,h,s),c,r,m,e,ei)}function add(p,o,x=0,y=0,z=0){o.position.set(x,y,z);p.add(o);return o}
+const world=new THREE.Group();scene.add(world);
+// --- Ciclo visual barato: altera apenas luzes/fog/exposição já existentes. ---
+let worldClock=42;const DAY_LENGTH=720;let dayFactor=1,nightFactor=0;
+const daySky=new THREE.Color(0x2b2342),nightSky=new THREE.Color(0x0b0d1d),dayFog=new THREE.Color(0x3b2e49),nightFog=new THREE.Color(0x141626);
+const dayHemi=new THREE.Color(0xb6bdff),nightHemi=new THREE.Color(0x58688f),dayGround=new THREE.Color(0x25152e),nightGround=new THREE.Color(0x15131e);
+const daySun=new THREE.Color(0xffd5b3),nightSun=new THREE.Color(0xffa978);
+function smooth01(t){return t*t*(3-2*t)}
+function updateDayNight(dt){
+ if(dt>0)worldClock=(worldClock+dt)%DAY_LENGTH;
+ const phase=worldClock/DAY_LENGTH,wave=Math.sin(phase*Math.PI*2-Math.PI/2),raw=clamp((wave+.30)/1.04,0,1);dayFactor=smooth01(raw);nightFactor=1-dayFactor;
+ const a=phase*Math.PI*2-Math.PI/2;sun.position.set(Math.cos(a)*62,20+Math.sin(a)*50,Math.sin(a*.82)*44);sun.intensity=.45+dayFactor*3.25;sun.color.lerpColors(nightSun,daySun,dayFactor);
+ hemi.intensity=.72+dayFactor*.93;hemi.color.lerpColors(nightHemi,dayHemi,dayFactor);hemi.groundColor.lerpColors(nightGround,dayGround,dayFactor);rim.intensity=.8+nightFactor*.75;moonLight.intensity=.10+nightFactor*.72;
+ scene.background.lerpColors(nightSky,daySky,dayFactor);scene.fog.color.lerpColors(nightFog,dayFog,dayFactor);renderer.toneMappingExposure=1.02+dayFactor*.10;
+}
+
+const ground=mesh(new THREE.CylinderGeometry(86,92,4,11),0x51405f,1);ground.position.y=-2.4;world.add(ground);const inner=mesh(new THREE.CylinderGeometry(60,64,1.2,10),0x64506f,1);inner.position.y=-.3;world.add(inner);
+for(let i=0;i<22;i++){const a=Math.random()*Math.PI*2,r=15+Math.random()*57,x=Math.cos(a)*r,z=Math.sin(a)*r;const crater=mesh(new THREE.TorusGeometry(.9+Math.random()*1.7,.22+Math.random()*.18,5,8),0x47384f,1);crater.rotation.x=Math.PI/2;crater.rotation.z=Math.random();crater.position.set(x,.03,z);crater.scale.y=.7+Math.random()*.5;world.add(crater)}
+for(let i=0;i<75;i++){const a=Math.random()*Math.PI*2,r=16+Math.random()*58,x=Math.cos(a)*r,z=Math.sin(a)*r;if(Math.random()<.62){const rock=mesh(new THREE.DodecahedronGeometry(.45+Math.random(),0),Math.random()<.5?0x5d4b68:0x705778,1);rock.position.set(x,.25,z);rock.scale.set(1,.45+Math.random()*.9,.8+Math.random()*.5);rock.rotation.y=Math.random()*6;world.add(rock)}else{const g=new THREE.Group();add(g,cyl(.12,.17,.7,5,0x40445a),0,.35,0);for(let k=0;k<3;k++){const c=add(g,mesh(new THREE.ConeGeometry(.25,.8,5),0x7b70d3,.65,.08,0x5444aa,.25),(k-1)*.28,.8+Math.random()*.35,(Math.random()-.5)*.2);c.rotation.z=(k-1)*.22}g.position.set(x,0,z);g.rotation.y=Math.random()*6;world.add(g)}}
+for(let i=0;i<18;i++){const a=i/18*Math.PI*2,r=82+Math.random()*8,h=4+Math.random()*8,m=mesh(new THREE.ConeGeometry(4+Math.random()*4,h,5),0x392f4b,1);m.position.set(Math.cos(a)*r,h/2-1,Math.sin(a)*r);m.rotation.y=Math.random();world.add(m)}
+const starGeo=new THREE.BufferGeometry(),arr=[];for(let i=0;i<650;i++){const r=130,theta=Math.random()*Math.PI*2,phi=Math.acos(lerp(.15,1,Math.random()));arr.push(Math.sin(phi)*Math.cos(theta)*r,Math.cos(phi)*r,Math.sin(phi)*Math.sin(theta)*r)}starGeo.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xdde5ff,size:.35,sizeAttenuation:true})));const moon=mesh(new THREE.SphereGeometry(8,16,10),0xd9a47b,1);moon.position.set(-72,62,-105);scene.add(moon);const moon2=mesh(new THREE.SphereGeometry(2.8,12,8),0x8bb6c8,1);moon2.position.set(58,44,-98);scene.add(moon2);
+function road(a,b,width=3.4){const mid=a.clone().add(b).multiplyScalar(.5),len=a.distanceTo(b),r=mesh(new THREE.BoxGeometry(width,.08,len),0x3a3443,1);r.position.copy(mid);r.position.y=.05;r.rotation.y=Math.atan2(b.x-a.x,b.z-a.z);r.material.transparent=true;r.material.opacity=.20;world.add(r);const lamps=new THREE.Group();world.add(lamps);const lampMats=[];const count=Math.max(2,Math.floor(len/5));for(let i=1;i<count;i++){const t=i/count,p=a.clone().lerp(b,t),lamp=mesh(new THREE.BoxGeometry(.12,.08,.55),0x9db7bf,.6,.1,0x72d7e4,1.1);lamp.position.set(p.x,.13,p.z);lamp.rotation.y=r.rotation.y;lamp.material.transparent=true;lamp.material.opacity=.18;lamps.add(lamp);lampMats.push(lamp.material)}return{mesh:r,lamps,lampMats,wear:0,last:-1}}
+const base=new THREE.Group();world.add(base);const unloadPad=new THREE.Vector3(4.4,0,3.8);add(base,cyl(9.8,10.8,.7,10,0x343843,.8,.35),0,.3,0);add(base,cyl(4.1,4.5,3,12,0xd9e0e8,.52,.32),0,1.8,-1);const dome=add(base,mesh(new THREE.SphereGeometry(3.65,14,8,0,Math.PI*2,0,Math.PI/2),0xa9dce5,.22,.15,0x2e778c,.22),0,3.2,-1);dome.scale.y=.52;add(base,cyl(4.25,4.25,.3,12,0x58616c,.6,.5),0,3.2,-1);add(base,box(3.8,2,2.7,0xadb6c2,.56,.35),4,1.35,-.9);add(base,box(.25,1.35,1.7,0x1e2934,.45,.55,0x315b74,.2),5.95,1.35,-.9);
+for(let i=0;i<7;i++){const a=i/7*Math.PI*2,w=box(.8,.72,.12,0x243b4c,.25,.3,0x235f7a,.35);w.position.set(Math.sin(a)*4.18,2,-1+Math.cos(a)*4.18);w.rotation.y=a;w.castShadow=false;base.add(w)}add(base,cyl(.65,.9,6,8,0x8f98a5,.58,.45),-4.7,3.1,-1.8);add(base,cyl(1.55,1.25,1.5,8,0xd6dde4,.48,.38),-4.7,6.4,-1.8);for(let i=0;i<4;i++){const w=box(.8,.55,.06,0x1b3545,.2,.3,0x28729a,.45),a=i*Math.PI/2;w.position.set(-4.7+Math.sin(a)*1.45,6.4,-1.8+Math.cos(a)*1.45);w.rotation.y=a;base.add(w)}add(base,cyl(.07,.07,4.4,6,0x858e97,.6,.7),-4.7,9.3,-1.8);add(base,mesh(new THREE.SphereGeometry(.24,8,6),0xffffff,.3,.1,0x75ddff,2.5),-4.7,11.55,-1.8);
+for(let s=0;s<2;s++){const g=new THREE.Group();g.position.set(-5.2+s*10.4,.5,4.4);base.add(g);add(g,box(.18,1.1,.18,0x7e8792,.65,.6),0,.5,0);const panel=add(g,box(4.2,.12,2.6,0x173448,.28,.45,0x163142,.15),0,1.2,0);panel.rotation.x=-.16*(s?1:-1);for(let k=-1;k<=1;k++)add(panel,box(.035,.02,2.45,0x82a4b7,.3,.3),k*1.25,.08,0)}
+const landing=new THREE.Group();landing.position.set(0,.1,7.3);base.add(landing);add(landing,cyl(3.2,3.2,.18,24,0x252d35,.8,.45),0,0,0);const ring=add(landing,mesh(new THREE.TorusGeometry(2.3,.09,6,24),0x86e8f3,.45,.2,0x54d6e8,2),0,.15,0);ring.rotation.x=Math.PI/2;for(let i=0;i<4;i++){const a=i*Math.PI/2,l=add(landing,box(.16,.12,.75,0xffffff,.5,.1,0x7eeeff,1.5),Math.sin(a)*2.65,.16,Math.cos(a)*2.65);l.rotation.y=a}add(base,box(3.4,.35,2.8,0x656d72,.62,.6),4.4,.35,3.2);for(let i=0;i<3;i++)add(base,box(.12,.12,2.55,0xd7c26d,.55,.2,0xb99b42,.55),3.5+i*.9,.58,3.2);add(base,box(5,2.1,2.6,0x606b73,.7,.45),0,1.2,4.7);add(base,box(3.7,1.55,.15,0x1d2630,.4,.6),0,1.15,6.02);
+// --- Oficina física: uma única baia limita naturalmente o paralelismo de manutenção. ---
+const workshopPos=new THREE.Vector3(-9.2,0,7.8),maintenancePoint=new THREE.Vector3(-7.6,0,6.6);
+const workshopGroup=new THREE.Group();workshopGroup.position.copy(workshopPos);world.add(workshopGroup);
+add(workshopGroup,box(7.4,.24,5.4,0x41474e,.78,.5),0,.14,0);add(workshopGroup,box(5.6,2.8,3.9,0x59636c,.68,.48),0,1.5,-.55);add(workshopGroup,box(4.5,2.0,.16,0x1c252d,.42,.58),0,1.2,1.45);
+for(const x of [-2.55,2.55])add(workshopGroup,box(.18,3.2,.18,0x818b93,.58,.65),x,1.65,1.8);const workshopBeam=add(workshopGroup,box(5.3,.18,.18,0x8f989f,.54,.66),0,3.18,1.8);
+const workshopArm=add(workshopGroup,new THREE.Group(),1.65,2.85,1.72);const workshopArmBar=add(workshopArm,box(.16,.16,2.25,0xd4d9dc,.48,.58),0,0,.85);workshopArmBar.rotation.x=.08;add(workshopArm,box(.18,1.25,.18,0xf0b867,.45,.5,0xe99c39,.65),0,-.65,1.78);
+const workshopServiceRing=add(workshopGroup,mesh(new THREE.TorusGeometry(1.75,.08,6,28),0xffc56b,.34,.26,0xff9f35,.55),1.6,.24,1.2);workshopServiceRing.rotation.x=Math.PI/2;
+const workshopLamp=add(workshopGroup,mesh(new THREE.SphereGeometry(.16,8,6),0xffffff,.25,.1,0xffad4a,.55),-2.35,2.72,1.45);add(workshopGroup,box(2.4,.12,1.9,0x6a625d,.68,.46),1.6,.18,1.2);
+const maintenanceRoute=road(maintenancePoint,new THREE.Vector3(-3.8,0,4.4),2.4);maintenanceRoute.mesh.material.opacity=.24;
+
+// --- Evolução física da base: grupos fixos, apenas visibility muda. ---
+const baseEvolution=[];function baseStage(){const g=new THREE.Group();g.visible=false;base.add(g);baseEvolution.push(g);return g}
+{const g=baseStage();g.position.set(7,.1,1.7);add(g,box(4.6,.28,3.2,0x4b5259,.72,.48),0,.15,0);for(const x of [-2,2])for(const z of [-1.25,1.25])add(g,box(.16,1.65,.16,0x7c858d,.6,.62),x,.82,z);add(g,box(4.5,.13,3.05,0x6d757c,.55,.48),0,1.68,0)}
+{const g=baseStage();g.position.set(-7.6,.1,1.7);add(g,cyl(2.05,2.25,2.4,10,0xa7b0b9,.58,.34),0,1.25,0);add(g,cyl(2.22,2.22,.22,10,0x505961,.58,.48),0,2.47,0);add(g,box(3.2,.65,1.1,0x7c858d,.62,.4),2.55,.6,0)}
+{const g=baseStage();g.position.set(5.8,.1,-6.1);for(let i=0;i<3;i++)add(g,cyl(.95,1.05,2.8,9,0x70787e,.6,.56),i*1.9,1.45,0);const p=add(g,cyl(.12,.12,5.4,7,0x8e9295,.55,.68),1.9,.8,1.7);p.rotation.x=Math.PI/2}
+{const g=baseStage();g.position.set(-1.5,.1,-8.2);add(g,box(6.5,2.55,4.1,0x626c75,.68,.43),0,1.32,0);add(g,box(5.2,1.9,.14,0x1c252d,.45,.52),0,1.2,2.08)}
+{const g=baseStage();g.position.set(8,.1,-3.2);add(g,cyl(.26,.36,6.4,8,0x9099a1,.55,.7),0,3.2,0);add(g,mesh(new THREE.SphereGeometry(.24,8,6),0xffffff,.3,.1,0x75ddff,2.1),0,6.5,0)}
+let shownBaseStage=-1;function baseProgressStage(){let unlocked=0,up=0;for(const m of mines){if(m.unlocked)unlocked++;up+=m.prod+m.val+m.store}for(const id of Object.keys(state.transportUpgrades)){const u=state.transportUpgrades[id]||{};up+=((u.speed||0)+(u.acceleration||0)+(u.capacity||0)+(u.load||0)+(u.unload||0))*.7}const score=(unlocked-1)*2+up+Math.floor(Math.max(0,bots.length-1)/2)+Math.min(4,Math.floor(state.deliveries/120));return score>=22?5:score>=14?4:score>=8?3:score>=4?2:score>=1?1:0}
+function updateBaseEvolution(){const st=baseProgressStage();if(st===shownBaseStage)return;shownBaseStage=st;baseEvolution.forEach((g,i)=>g.visible=st>=i+1)}
+
+// Modificadores centralizados. Eventos só alteram este objeto; sistemas de gameplay apenas o consultam.
+const colonyModifiers={resourceValueMul:Array(8).fill(1),wheeledSpeedMul:1,skimmerSpeedMul:1,refinerySpeedMul:1,refineryEnergyMul:1};
+function resetColonyModifiers(){colonyModifiers.resourceValueMul.fill(1);colonyModifiers.wheeledSpeedMul=1;colonyModifiers.skimmerSpeedMul=1;colonyModifiers.refinerySpeedMul=1;colonyModifiers.refineryEnergyMul=1}
+const defs=[
+{name:'Campo Basáltico',res:'Basalto',color:0x89929a,glow:0,pos:new THREE.Vector3(-19,0,7),time:5,value:10,unlock:0,scale:1,kind:'rock'},
+{name:'Veio Ferruginoso',res:'Ferro',color:0xb95649,glow:0x6c2016,pos:new THREE.Vector3(25,0,-19),time:8,value:42,unlock:260,scale:1.15,kind:'ore'},
+{name:'Espira de Cobre',res:'Cobre',color:0xe09a48,glow:0x864512,pos:new THREE.Vector3(39,0,27),time:11.5,value:135,unlock:2200,scale:1.28,kind:'crystal'},
+{name:'Ninho de Xenocristal',res:'Xenocristal',color:0x6ae7ff,glow:0x1a8fa9,pos:new THREE.Vector3(-48,0,-39),time:17,value:390,unlock:11500,scale:1.45,kind:'crystal'},
+{name:'Falha de Cobalto',res:'Cobalto',color:0x557be8,glow:0x294ba8,pos:new THREE.Vector3(58,0,-28),time:20,value:760,unlock:30000,scale:1.42,kind:'ore'},
+{name:'Jardim de Obsidiana',res:'Obsidiana',color:0x352d48,glow:0x8d4dcc,pos:new THREE.Vector3(55,0,46),time:24,value:1450,unlock:73000,scale:1.5,kind:'spike'},
+{name:'Fenda de Plasmaita',res:'Plasmaita',color:0xff6ea8,glow:0xd61f72,pos:new THREE.Vector3(-58,0,38),time:29,value:2950,unlock:175000,scale:1.58,kind:'plasma'},
+{name:'Coroa de Aetherita',res:'Aetherita',color:0xc6f3ff,glow:0x6bdcff,pos:new THREE.Vector3(-12,0,67),time:36,value:6200,unlock:450000,scale:1.68,kind:'aether'}
+];const routes=defs.map(d=>road(d.pos,new THREE.Vector3(2.5,0,3.3),3.4));
+function makeLabel(){const e=document.createElement('div');e.className='label';$('#ui').appendChild(e);return e}function mineralRock(parent,x,y,z,s,c,glow=0){const rock=mesh(new THREE.DodecahedronGeometry(s,0),c,.72,.08,glow,glow?1.25:0);rock.position.set(x,y,z);rock.scale.set(.72+Math.random()*.5,.75+Math.random()*.85,.72+Math.random()*.5);rock.rotation.set(Math.random(),Math.random()*6,Math.random()*.4);parent.add(rock);return rock}
+function addMineEvolution(m){const d=m.def,prod=new THREE.Group(),analysis=new THREE.Group(),storage=new THREE.Group(),advanced=new THREE.Group();prod.visible=analysis.visible=storage.visible=advanced.visible=false;m.group.add(prod,analysis,storage,advanced);const pd=add(prod,new THREE.Group(),2*d.scale,.2,-2.1*d.scale);add(pd,box(1.6,.32,1.5,0x4d555d,.62,.55),0,.18,0);add(pd,box(.22,2.15,.22,0x949ca3,.55,.68),0,1.35,0);const d2=add(pd,cyl(.18,.31,1,7,0x3d4449,.52,.72),0,2.1,1.05);d2.rotation.x=Math.PI/2;add(analysis,cyl(.14,.18,3.3,7,0x7d878f,.5,.66),1.7*d.scale,1.65,1.6*d.scale);add(analysis,mesh(new THREE.SphereGeometry(.15,7,5),0xffffff,.25,.1,d.glow||0xffd17a,1.6),1.7*d.scale,3.35,1.6*d.scale);const sy=add(storage,new THREE.Group(),3.5*d.scale,.12,2.5*d.scale);add(sy,box(4.6,.16,3.2,0x5e5963,.78,.35),0,0,0);for(let i=0;i<2;i++)add(sy,cyl(.68,.76,1.4,8,0x686f75,.62,.5),-1.25+i*2.5,.78,-1.05);for(const x of [-3.2,3.2])add(advanced,box(.22,4,.22,0x747d84,.55,.68),x*d.scale,2,0);add(advanced,box(6.7*d.scale,.25,.25,0x8e969b,.55,.68),0,3.88,0);m.evo={prod,analysis,storage,advanced,drill:d2}}
+function updateMineEvolution(m){if(!m.evo)return;m.group.visible=m.discovered;const total=m.prod+m.val+m.store;m.evo.prod.visible=m.unlocked&&m.prod>0;m.evo.analysis.visible=m.unlocked&&m.val>0;m.evo.storage.visible=m.unlocked&&m.store>0;m.evo.advanced.visible=m.unlocked&&total>=5;m.evo.prod.scale.setScalar(1+Math.min(m.prod,6)*.025);m.evo.analysis.scale.setScalar(1+Math.min(m.val,6)*.02);m.evo.storage.scale.set(1+Math.min(m.store,6)*.03,1,1+Math.min(m.store,6)*.04)}
+function createDeposit(d,index){
+ const g=new THREE.Group();g.position.copy(d.pos);world.add(g);
+ add(g,cyl(5.5*d.scale,5.9*d.scale,.45,9,0x40384a,1),0,.15,0);
+ for(let i=0;i<18;i++){
+   const a=Math.random()*Math.PI*2,r=(1.2+Math.random()*3.9)*d.scale,sz=.45+Math.random()*1.05*d.scale;
+   mineralRock(g,Math.cos(a)*r,sz*.34,Math.sin(a)*r,sz,Math.random()<.75?0x5a5060:0x68596d)
+ }
+ const oreCount=d.kind==='aether'?15:d.kind==='plasma'?13:d.kind==='spike'?12:9;
+ for(let i=0;i<oreCount;i++){
+   const a=Math.random()*Math.PI*2,r=.25+Math.random()*2.5*d.scale;
+   if(d.kind==='rock'||d.kind==='ore'){
+     const ore=mineralRock(g,Math.cos(a)*r,.45+Math.random()*.9,Math.sin(a)*r,.5+Math.random()*.85,d.color,d.glow);
+     if(d.kind==='ore')ore.scale.y*=.58;
+   }else{
+     const tall=d.kind==='aether'?4.7:d.kind==='plasma'?3.8:d.kind==='spike'?3.3:2.7;
+     const h=(1.2+Math.random()*tall)*d.scale;
+     const sides=d.kind==='spike'?4:5;
+     const crystal=mesh(new THREE.ConeGeometry(.25+Math.random()*.42,h,sides),d.color,.32,.18,d.glow,d.kind==='aether'?2.7:d.kind==='plasma'?2.15:1.4);
+     crystal.position.set(Math.cos(a)*r,h/2,Math.sin(a)*r);
+     crystal.rotation.z=(Math.random()-.5)*(d.kind==='spike'?.48:.25);crystal.rotation.y=Math.random()*6;g.add(crystal);
+   }
+ }
+ if(d.kind==='plasma'||d.kind==='aether'){
+   const halo=add(g,mesh(new THREE.TorusGeometry(2.2*d.scale,.07,5,24),d.color,.25,.12,d.glow,2),0,.32,0);
+   halo.rotation.x=Math.PI/2;
+ }
+ const rig=new THREE.Group();rig.position.set(-2.5*d.scale,.2,-2.2*d.scale);g.add(rig);
+ add(rig,box(2.4,.45,2.1,0x515863,.68,.5),0,.25,0);
+ add(rig,box(.32,2.8,.32,0x89919c,.55,.65),0,1.8,0);
+ const arm=add(rig,box(.28,.28,2.6,0xd0d7df,.5,.55),0,3.1,.75);arm.rotation.x=.28;
+ const drill=add(rig,cyl(.22,.38,1.2,7,0x434a50,.55,.7),0,2.55,1.75);drill.rotation.x=Math.PI/2;
+ const lamp=add(rig,mesh(new THREE.SphereGeometry(.13,7,5),0xffffff,.3,.1,d.glow||0xffd375,2),.7,2.1,.7);
+ add(g,box(3.4,.18,2.5,0x69626e,.75,.35),3.3*d.scale,.12,2.4*d.scale);
+ for(let i=0;i<3;i++)add(g,box(.1,.1,2.3,0xb2a65f,.6,.15,0x8a7a2e,.25),(2.5+i*.8)*d.scale,.28,2.4*d.scale);
+
+  const m={def:d,index,group:g,arm,drill,lamp,label:makeLabel(),progress:0,discovered:index===0,unlocked:index===0,prod:0,val:0,store:0,evo:null,stock:0,reserved:0,lots:[],stockVisuals:[],stockAgeSince:0,blocked:false,labelAnchor:d.pos.clone().add(new THREE.Vector3(0,7*d.scale,0))};g.visible=m.discovered;addMineEvolution(m);return m
+}
+const mines=defs.map(createDeposit);
+const MINE_UPGRADE_MAX={prod:7,val:6,store:7};
+function permanentResourceValueMul(m){return m.index>=5&&state?.tech?.rareProspecting?1.08:1}
+function baseValueOf(m){return Math.round(m.def.value*Math.pow(1.27,m.val))}
+function valueOf(m){return Math.round(baseValueOf(m)*permanentResourceValueMul(m)*(colonyModifiers.resourceValueMul[m.index]||1))}
+function timeOf(m){return m.def.time*Math.pow(.82,m.prod)}
+function capacity(m){return 6+m.store*4}
+function availableStock(m){return Math.max(0,m.stock-m.reserved)}
+function prodCost(m){return m.prod>=MINE_UPGRADE_MAX.prod?Infinity:Math.round(65*(m.index+1)*Math.pow(1.78,m.prod))}
+function valCost(m){return m.val>=MINE_UPGRADE_MAX.val?Infinity:Math.round(90*(m.index+1)*Math.pow(1.84,m.val))}
+function storeCost(m){return m.store>=MINE_UPGRADE_MAX.store?Infinity:Math.round(110*(m.index+1)*Math.pow(1.92,m.store))}
+
+const STOCK_VISUAL_SLOTS=10;
+const stockGeo=new THREE.BoxGeometry(1.05,.76,1.05);
+const stockMats=defs.map(d=>new THREE.MeshStandardMaterial({color:d.kind==='rock'?d.color:0x66727a,roughness:.58,metalness:.34,emissive:d.glow||0x000000,emissiveIntensity:d.glow?.32:0}));
+function initMineStorage(m){
+  m.pickupPoint=m.def.pos.clone().add(new THREE.Vector3(3.25*m.def.scale,0,2.35*m.def.scale));
+  m.routeDistance=m.pickupPoint.distanceTo(unloadPad);
+  const holder=new THREE.Group();holder.position.set(3.25*m.def.scale,.58,2.35*m.def.scale);m.group.add(holder);m.stockHolder=holder;
+  for(let i=0;i<STOCK_VISUAL_SLOTS;i++){
+    const c=new THREE.Mesh(stockGeo,stockMats[m.index]);c.castShadow=true;c.receiveShadow=true;c.visible=false;
+    const col=i%2,row=Math.floor(i/2);c.position.set((col-.5)*1.18,row*.82,0);holder.add(c);m.stockVisuals.push(c)
+  }
+}
+mines.forEach(initMineStorage);
+
+
+// --- Fase industrial: estruturas físicas fixas e baratas; apenas estados visuais mudam. ---
+const refineryPos=new THREE.Vector3(13,0,-10),refineryInputPoint=new THREE.Vector3(10.5,0,-8.3),refineryOutputPoint=new THREE.Vector3(16.2,0,-8.0);
+const warehousePos=new THREE.Vector3(15,0,5.5),warehousePoint=new THREE.Vector3(12.3,0,5.2),exportPoint=unloadPad.clone();
+const refineryGroup=new THREE.Group();refineryGroup.position.copy(refineryPos);world.add(refineryGroup);refineryGroup.visible=false;
+add(refineryGroup,box(8.2,.28,6.4,0x3f464e,.72,.55),0,.15,0);add(refineryGroup,box(4.8,3.2,4.1,0x66717a,.58,.56),0,1.75,0);
+add(refineryGroup,box(3.6,2.25,.18,0x1c2730,.35,.55,0x235b66,.18),0,1.7,2.12);for(const x of [-2.9,2.9])add(refineryGroup,cyl(.72,.88,3.7,9,0x737b80,.55,.65),x,1.95,-1.2);
+const refineryCore=add(refineryGroup,cyl(1.05,1.15,2.4,10,0x454d55,.38,.72,0xff7a42,.35),0,1.55,-.5);const refineryRing=add(refineryGroup,mesh(new THREE.TorusGeometry(1.25,.10,6,24),0xffa05e,.3,.25,0xff7138,1.8),0,1.55,-.5);refineryRing.rotation.x=Math.PI/2;
+const refineryChimney=add(refineryGroup,cyl(.35,.48,5.4,8,0x4c545b,.7,.65),2.4,3.0,-1.4);const refineryLamp=add(refineryGroup,mesh(new THREE.SphereGeometry(.18,8,6),0xffffff,.25,.1,0xff8b45,2.5),2.4,5.85,-1.4);
+add(refineryGroup,box(2.8,.16,2.6,0x68615d,.68,.45),-3.1,.18,1.4);add(refineryGroup,box(2.8,.16,2.6,0x68615d,.68,.45),3.1,.18,1.4);
+const refineryInputHolder=add(refineryGroup,new THREE.Group(),-3.1,.65,1.4),refineryOutputHolder=add(refineryGroup,new THREE.Group(),3.1,.65,1.4);
+const refineryInputVisuals=[],refineryOutputVisuals=[];for(let i=0;i<8;i++){const a=new THREE.Mesh(stockGeo,stockMats[1]);a.castShadow=true;a.visible=false;a.position.set((i%2-.5)*1.05,Math.floor(i/2)*.72,0);refineryInputHolder.add(a);refineryInputVisuals.push(a);const b=new THREE.Mesh(stockGeo,stockMats[2]);b.castShadow=true;b.visible=false;b.position.set((i%2-.5)*1.05,Math.floor(i/2)*.72,0);refineryOutputHolder.add(b);refineryOutputVisuals.push(b)}
+const industrialWarehouse=new THREE.Group();industrialWarehouse.position.copy(warehousePos);world.add(industrialWarehouse);industrialWarehouse.visible=false;
+add(industrialWarehouse,box(8.5,.25,6.2,0x41484e,.75,.5),0,.15,0);add(industrialWarehouse,box(7.4,3.7,5.2,0x59636b,.7,.48),0,1.95,0);add(industrialWarehouse,box(6.1,2.8,.18,0x1d252d,.4,.55),0,1.75,2.67);for(let x=-2.5;x<=2.5;x+=1.25)add(industrialWarehouse,box(.09,.11,4.4,0xb4a75d,.55,.25,0x8f7a29,.25),x,.18,0);
+const warehouseStockHolder=add(industrialWarehouse,new THREE.Group(),-2.4,.55,1.8),warehouseVisuals=[];for(let i=0;i<10;i++){const c=new THREE.Mesh(stockGeo,stockMats[3]);c.castShadow=true;c.visible=false;c.position.set((i%2-.5)*1.05,Math.floor(i/2)*.7,0);warehouseStockHolder.add(c);warehouseVisuals.push(c)}
+const powerYard=new THREE.Group();powerYard.position.set(-14,.1,-7);world.add(powerYard);add(powerYard,box(12,.18,8.5,0x3e4149,.82,.45),0,.1,0);
+const solarVisuals=[];for(let i=0;i<8;i++){const g=new THREE.Group();g.position.set(-4.3+(i%4)*2.9,.25,-2.2+Math.floor(i/4)*4.1);powerYard.add(g);add(g,box(.12,1.0,.12,0x737b83,.6,.6),0,.5,0);const pn=add(g,box(2.5,.10,1.55,0x153c50,.25,.5,0x133848,.16),0,1.15,0);pn.rotation.x=-.24;solarVisuals.push(g)}
+const generatorVisuals=[];for(let i=0;i<4;i++){const g=new THREE.Group();g.position.set(-3.7+i*2.5,.1,.2);powerYard.add(g);add(g,box(2.0,1.5,1.65,0x70766e,.6,.62),0,.8,0);add(g,cyl(.18,.23,1.4,7,0x3f4445,.62,.7),.65,1.9,0);add(g,mesh(new THREE.SphereGeometry(.11,7,5),0xffffff,.2,.1,0xffb258,1.5),-.6,1.25,.84);generatorVisuals.push(g)}
+const batteryVisuals=[];for(let i=0;i<6;i++){const g=new THREE.Group();g.position.set(-4.5+i*1.8,.2,3.0);powerYard.add(g);add(g,box(1.35,1.85,1.15,0x3b5361,.38,.66,0x2d7a8c,.3),0,.95,0);add(g,box(.72,.08,.08,0x8fefff,.3,.2,0x62dce9,1.2),0,1.35,.59);batteryVisuals.push(g)}
+const reactorVisual=new THREE.Group();reactorVisual.position.set(4.5,.2,0);powerYard.add(reactorVisual);add(reactorVisual,cyl(2.0,2.4,3.8,10,0x454b58,.38,.75,0x5638a5,.25),0,2,0);const reactorOrb=add(reactorVisual,mesh(new THREE.SphereGeometry(.8,12,8),0xb9a4ff,.18,.25,0x7b55ff,3.6),0,2.2,0);const reactorHalo=add(reactorVisual,mesh(new THREE.TorusGeometry(1.35,.08,6,28),0x9b83ff,.25,.25,0x805dff,2.5),0,2.2,0);reactorHalo.rotation.x=Math.PI/2;reactorVisual.visible=false;
+const industrialRoutes=[road(refineryInputPoint,new THREE.Vector3(2.5,0,3.3),2.8),road(refineryOutputPoint,warehousePoint,2.8),road(warehousePoint,exportPoint,2.8)];for(const r of industrialRoutes){r.mesh.visible=false;r.lamps.visible=false}
+
+
+function updateStockVisual(m){
+  const visible=Math.min(STOCK_VISUAL_SLOTS,m.stock);
+  for(let i=0;i<m.stockVisuals.length;i++)m.stockVisuals[i].visible=m.unlocked&&i<visible;
+  const ratio=capacity(m)>0?m.stock/capacity(m):0;
+  if(m.stockHolder)m.stockHolder.scale.set(1,1,1+Math.min(.25,ratio*.18))
+}
+function refreshAvailabilityAge(m,simNow=0){
+  if(availableStock(m)>0){if(!m.stockAgeSince)m.stockAgeSince=simNow||.0001}
+  else m.stockAgeSince=0
+}
+function addStockLot(m,units,unitValue,simNow){
+  units=Math.max(0,Math.floor(units));if(!units)return 0;
+  const room=Math.max(0,capacity(m)-m.stock),addUnits=Math.min(room,units);if(!addUnits)return 0;
+  const last=m.lots[m.lots.length-1];
+  if(last&&last.value===unitValue)last.units+=addUnits;else m.lots.push({units:addUnits,value:unitValue});
+  m.stock+=addUnits;refreshAvailabilityAge(m,simNow);updateStockVisual(m);return addUnits
+}
+function takeStock(m,units,simNow){
+  let want=Math.min(Math.max(0,Math.floor(units)),m.stock),left=want,total=0,taken=0;
+  while(left>0&&m.lots.length){
+    const lot=m.lots[0],n=Math.min(left,lot.units);lot.units-=n;left-=n;taken+=n;total+=n*lot.value;
+    if(lot.units<=0)m.lots.shift()
+  }
+  if(left>0){const fallback=Math.min(left,m.stock-taken);taken+=fallback;total+=fallback*valueOf(m)}
+  m.stock=Math.max(0,m.stock-taken);refreshAvailabilityAge(m,simNow);updateStockVisual(m);return{units:taken,total}
+}
+
+const particles=[];
+// Fixed particle pool: reuses Mesh/Geometry/Material instead of allocating forever.
+const PARTICLE_POOL_LIMIT=220;
+const particleGeo=new THREE.DodecahedronGeometry(.18,0);
+const particleMats=new Map();
+const particleFree=[],particleEntryFree=[];
+function particleMat(key,color,opacity){
+  if(!particleMats.has(key))particleMats.set(key,new THREE.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false}));
+  return particleMats.get(key);
+}
+function acquireParticle(kind,color=0xffffff){
+  if(particles.length>=180)return null;
+  let p=particleFree.pop();
+  if(!p){p=new THREE.Mesh(particleGeo,particleMat('default',0xffffff,.45));p.castShadow=false;p.receiveShadow=false}
+  const key=kind==='dust'?'dust':kind==='steam'?'steam':'ore_'+color;
+  p.material=kind==='dust'?particleMat('dust',0xb297a9,.30):kind==='steam'?particleMat('steam',0xd6e4e8,.16):particleMat(key,color,.52);
+  p.visible=true;p.scale.set(1,1,1);world.add(p);return p;
+}
+function pushParticle(m,life,vx,vy,vz,dust=false,steam=false){let e=particleEntryFree.pop();if(!e)e={m:null,life:0,v:new THREE.Vector3(),dust:false,steam:false};e.m=m;e.life=life;e.v.set(vx,vy,vz);e.dust=dust;e.steam=steam;particles.push(e)}
+function releaseParticle(entry){
+  entry.m.removeFromParent();entry.m.visible=false;
+  if(particleFree.length<PARTICLE_POOL_LIMIT)particleFree.push(entry.m);
+  entry.m=null;entry.dust=false;entry.steam=false;if(particleEntryFree.length<PARTICLE_POOL_LIMIT)particleEntryFree.push(entry);
+}
+function puff(pos,color,count=5){
+  for(let i=0;i<count;i++){
+    const p=acquireParticle('ore',color);if(!p)break;
+    const s=.65+Math.random()*.7;p.scale.set(s,s,s);p.position.copy(pos);p.position.x+=(Math.random()-.5)*.7;p.position.y+=.2+Math.random()*.4;p.position.z+=(Math.random()-.5)*.7;
+    pushParticle(p,.65+Math.random()*.45,(Math.random()-.5)*.5,.5+Math.random()*.65,(Math.random()-.5)*.5);
+  }
+}
+// --- Planet life: ambient motes, tire tracks, rover dust and base vent steam ---
+const ambientGeo=new THREE.BufferGeometry(),ambientPos=[];
+for(let i=0;i<170;i++)ambientPos.push((Math.random()-.5)*135,1+Math.random()*18,(Math.random()-.5)*135);
+ambientGeo.setAttribute('position',new THREE.Float32BufferAttribute(ambientPos,3));
+const ambientDust=new THREE.Points(ambientGeo,new THREE.PointsMaterial({color:0xd6b7cf,size:.12,transparent:true,opacity:.32,depthWrite:false}));
+world.add(ambientDust);
+
+const TRACK_MAX=760;
+const trackGeo=new THREE.BoxGeometry(.18,.018,.7);
+const trackMat=new THREE.MeshBasicMaterial({color:0x29232f,transparent:true,opacity:.52,depthWrite:false});
+const tracks=new THREE.InstancedMesh(trackGeo,trackMat,TRACK_MAX);
+tracks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+tracks.count=TRACK_MAX;
+tracks.frustumCulled=false;
+world.add(tracks);
+const hiddenTrackMatrix=new THREE.Matrix4().makeScale(0,0,0);
+for(let i=0;i<TRACK_MAX;i++)tracks.setMatrixAt(i,hiddenTrackMatrix);
+tracks.instanceMatrix.needsUpdate=true;
+let trackCursor=0,tracksDirty=false;
+const trackDummy=new THREE.Object3D();
+const trackRight=new THREE.Vector3(),trackBack=new THREE.Vector3(),trackPos=new THREE.Vector3();
+
+function stampTrack(bot){
+  const yaw=bot.mesh.rotation.y;
+  trackRight.set(Math.cos(yaw),0,-Math.sin(yaw));
+  trackBack.set(-Math.sin(yaw),0,-Math.cos(yaw));
+  for(const side of [-.58,.58]){
+    trackPos.copy(bot.mesh.position).addScaledVector(trackRight,side).addScaledVector(trackBack,.55);
+    trackDummy.position.set(trackPos.x,.115,trackPos.z);
+    trackDummy.rotation.set(0,yaw,0);
+    trackDummy.scale.set(1,1,1);
+    trackDummy.updateMatrix();
+    tracks.setMatrixAt(trackCursor,trackDummy.matrix);
+    trackCursor=(trackCursor+1)%TRACK_MAX;
+  }
+  tracksDirty=true;
+}
+
+const dustBack=new THREE.Vector3(),dustRight=new THREE.Vector3(),dustPos=new THREE.Vector3();
+function roverDust(bot,intensity=1){
+  const yaw=bot.mesh.rotation.y;
+  dustBack.set(-Math.sin(yaw),0,-Math.cos(yaw));
+  dustRight.set(Math.cos(yaw),0,-Math.sin(yaw));
+  for(let i=0;i<2+Math.floor(intensity);i++){
+    const p=acquireParticle('dust');if(!p)break;
+    dustPos.copy(bot.mesh.position).addScaledVector(dustBack,.8+Math.random()*.45).addScaledVector(dustRight,(Math.random()-.5)*1.15);
+    p.position.set(dustPos.x,.16+Math.random()*.12,dustPos.z);
+    const s=.8+Math.random()*.55;p.scale.set(1.4*s,.55*s,1.4*s);
+    pushParticle(p,.75+Math.random()*.45,(Math.random()-.5)*.35,.15+Math.random()*.22,(Math.random()-.5)*.35,true,false);
+  }
+}
+
+const steamVents=[
+  {p:new THREE.Vector3(-2.7,3.7,-3.1),phase:0},
+  {p:new THREE.Vector3(3.1,2.2,-3.4),phase:1.7}
+];
+let steamTimer=0;
+function steamPuff(pos){
+  const p=acquireParticle('steam');if(!p)return;
+  const s=.85+Math.random()*.35;p.position.copy(pos);p.scale.set(s,1.5*s,s);
+  pushParticle(p,1.7+Math.random()*.6,(Math.random()-.5)*.08,.55+Math.random()*.2,(Math.random()-.5)*.08,false,true);
+}
+
+// Drone físico de reconhecimento: o mesmo objeto patrulha, viaja, escaneia e retorna.
+const surveyDrone=new THREE.Group();
+add(surveyDrone,box(.82,.20,.52,0xc7d0d8,.45,.6),0,0,0);
+const surveyDroneLight=add(surveyDrone,mesh(new THREE.SphereGeometry(.10,7,5),0xffffff,.2,.1,0x63dfff,2.8),.46,0,0);
+add(surveyDrone,box(.72,.035,1.05,0x193948,.3,.45,0x19475a,.18),0,.02,0);
+for(const x of [-.54,.54])for(const z of [-.38,.38]){const arm=add(surveyDrone,box(.42,.045,.045,0x68747d,.5,.55),x*.55,.02,z);arm.rotation.y=x*z>0?.3:-.3;add(surveyDrone,cyl(.22,.22,.035,10,0x8fddea,.32,.25,0x46d7ee,.9),x,.03,z)}
+const surveyScanner=add(surveyDrone,mesh(new THREE.TorusGeometry(.58,.035,5,22),0x78eaff,.24,.18,0x52dbff,2.0),0,-.18,0);surveyScanner.rotation.x=Math.PI/2;surveyScanner.visible=false;surveyDrone.visible=false;world.add(surveyDrone);
+
+const RESOURCE_COUNT=defs.length,MAX_FLEET=60,STARVATION_SECONDS=45;
+const transportTypes={
+ rover:{
+  id:'rover',name:'Rover Universal',color:0xe0bf5c,accent:0x45a5c0,buyBase:300,wheels:true,
+  baseSpeed:5.15,baseAcceleration:5.8,baseCapacity:1,capacityStep:1,baseLoad:.55,baseUnload:.42,
+  compatibility:{mode:'all',resources:[]},dispatchFill:.01,partialWait:0,
+  upgradeMax:{speed:5,acceleration:4,capacity:3,load:4,unload:4},
+  desc:'Barato, ágil e responsivo. Excelente para rotas curtas e estoques pequenos.'
+ },
+ crawler:{
+  id:'crawler',name:'Crawler Pesado',color:0xdf7257,accent:0xffb05d,buyBase:2400,wheels:true,
+  baseSpeed:3.05,baseAcceleration:1.35,baseCapacity:4,capacityStep:2,baseLoad:.78,baseUnload:.62,
+  compatibility:{mode:'group',resources:[0,1,2,4,5]},dispatchFill:.50,partialWait:10,
+  upgradeMax:{speed:5,acceleration:4,capacity:4,load:4,unload:4},
+  desc:'Grande e lento, mas move lotes enormes. Ideal para produção alta e rotas longas.'
+ },
+ skimmer:{
+  id:'skimmer',name:'Skimmer Selado',color:0x70dbe7,accent:0x8b7cff,buyBase:14500,wheels:false,
+  baseSpeed:7.35,baseAcceleration:8.4,baseCapacity:2,capacityStep:1,baseLoad:.38,baseUnload:.32,
+  compatibility:{mode:'group',resources:[3,5,6,7]},dispatchFill:.01,partialWait:0,
+  upgradeMax:{speed:5,acceleration:4,capacity:4,load:4,unload:4},
+  desc:'Tecnologia antigravidade para cargas raras: muito rápido, caro e especializado.'
+ }
+};
+function compatible(type,mineIndex){
+  const c=type.compatibility;if(c.mode==='all')return true;
+  if(c.mode==='single')return c.resources[0]===mineIndex;
+  return c.resources.includes(mineIndex)
+}
+function compatibilityText(type){
+  const c=type.compatibility;
+  if(c.mode==='all')return'Qualquer minério descoberto';
+  const known=c.resources.filter(i=>mines[i]?.discovered).map(i=>defs[i].res),unknown=c.resources.length-known.length;
+  if(c.mode==='single')return known[0]||'Recurso não catalogado';
+  if(unknown)known.push(`${unknown} recurso${unknown>1?'s':''} não catalogado${unknown>1?'s':''}`);
+  return known.join(' • ')||'Recursos ainda não catalogados'
+}
+function defaultPriorities(typeId){
+  if(typeId==='rover')return[2,2,1,1,1,1,1,1];
+  if(typeId==='crawler')return[0,1,1,0,2,2,0,0];
+  return[0,0,0,2,0,1,2,2]
+}
+function blankUpgrades(){return{speed:0,acceleration:0,capacity:0,load:0,unload:0}}
+let state={
+ money:150,deliveries:0,selected:0,speed:1,manageTab:'mine',processedExports:0,
+ transportUpgrades:{rover:blankUpgrades(),crawler:blankUpgrades(),skimmer:blankUpgrades()},
+ transportPriorities:{rover:defaultPriorities('rover'),crawler:defaultPriorities('crawler'),skimmer:defaultPriorities('skimmer')},
+ refinery:{unlocked:false,speed:0,input:0,output:0,efficiency:0,recipeEnabled:{iron_ingot:true,copper_plate:true,refined_xeno:true,cobalt_compound:true}},
+ power:{solar:2,generators:0,batteries:0,reactor:false,batteryCharge:0},
+ survey:{droneUnlocked:false,flight:0,scan:0,completed:[],seen:[],activeSignal:null},
+ tech:{gravLattice:false,solarResonance:false,alienReactor:false,processHarmony:false,rareProspecting:false}
+};
+const bots=[],botById=new Map(),activeBots=new Set(),skimmerBots=[];
+const cargoGeo=new THREE.BoxGeometry(.68,.52,.68);
+const cargoMats=defs.map(d=>new THREE.MeshStandardMaterial({color:d.color,roughness:.48,metalness:.34,emissive:d.glow||0x000000,emissiveIntensity:d.glow?.9:0}));
+const recipes=[
+ {id:'iron_ingot',name:'Lingote de Ferro',inputMine:1,inputName:'Ferro',time:8.5,energy:18,valueMul:2.35,color:0xc9c8c5,glow:0x5b4b42},
+ {id:'copper_plate',name:'Placa de Cobre',inputMine:2,inputName:'Cobre',time:11,energy:20,valueMul:2.55,color:0xf0aa5a,glow:0x7f4218},
+ {id:'refined_xeno',name:'Xenocristal Refinado',inputMine:3,inputName:'Xenocristal',time:15,energy:24,valueMul:2.85,color:0x9cf4ff,glow:0x35d9ef},
+ {id:'cobalt_compound',name:'Composto de Cobalto',inputMine:4,inputName:'Cobalto',time:18,energy:28,valueMul:3.10,color:0x809cff,glow:0x4969e8}
+];
+const recipeById=new Map(recipes.map(r=>[r.id,r]));
+const recipeByMine=new Map(recipes.map(r=>[r.inputMine,r]));
+const processedCargoMats=new Map(recipes.map(r=>[r.id,new THREE.MeshStandardMaterial({color:r.color,roughness:.36,metalness:.56,emissive:r.glow,emissiveIntensity:.75})]));
+
+
+// --- Exploração e descoberta: conjunto finito de sinais, um drone e nenhum pathfinding. ---
+const DISCOVERY_SITE_Y=.18,SURVEY_DRONE_COST=120;
+const signalGeo=new THREE.TorusGeometry(1.25,.07,6,28),signalPoleGeo=new THREE.CylinderGeometry(.08,.12,2.2,6),signalOrbGeo=new THREE.SphereGeometry(.18,8,6);
+const signalMat=new THREE.MeshStandardMaterial({color:0x7ba8df,roughness:.32,metalness:.28,emissive:0x446fc3,emissiveIntensity:1.45,transparent:true,opacity:.72});
+const signalPoleMat=new THREE.MeshStandardMaterial({color:0x66758d,roughness:.52,metalness:.52,emissive:0x263e78,emissiveIntensity:.45});
+const signalOrbMat=new THREE.MeshStandardMaterial({color:0xd9eeff,roughness:.2,metalness:.15,emissive:0x62dfff,emissiveIntensity:2.2});
+const surveyHome=new THREE.Vector3(0,6.2,7.3);
+const surveyRuntime={phase:'idle',signal:null,scanRemaining:0,scanTotal:0,hoverPhase:0};
+function sigMine(id,code,mineIndex,scanCost,scanTime,available){return{id,code,mineIndex,scanCost,scanTime,pos:defs[mineIndex].pos.clone(),available,resultKind:'mine'}}
+const signalDefs=[
+ sigMine('iron_echo','ECO A-01',1,190,5.0,()=>true),
+ {id:'ruins_arc','code':'ECO A-02',scanCost:650,scanTime:6.2,pos:new THREE.Vector3(-31,0,-7),available:()=>mines[1].discovered,resultKind:'ruins',reward:900,tech:'gravLattice'},
+ sigMine('copper_echo','ECO B-01',2,1000,6.0,()=>mines[1].unlocked&&state.deliveries>=12),
+ {id:'iridium_cache','code':'ECO B-02',scanCost:2200,scanTime:6.7,pos:new THREE.Vector3(8,0,54),available:()=>mines[2].discovered,resultKind:'cache',reward:6500,tech:'rareProspecting'},
+ sigMine('xeno_echo','ECO C-01',3,5000,7.4,()=>mines[2].unlocked&&state.deliveries>=25),
+ {id:'energy_well','code':'ECO C-02',scanCost:6500,scanTime:7.8,pos:new THREE.Vector3(31,0,49),available:()=>mines[2].unlocked&&state.deliveries>=40,resultKind:'energy',reward:2500,tech:'solarResonance'},
+ sigMine('cobalt_echo','ECO D-01',4,12000,8.2,()=>mines[3].unlocked&&state.deliveries>=55),
+ {id:'alien_artifact','code':'ECO D-02',scanCost:14500,scanTime:9.0,pos:new THREE.Vector3(-36,0,51),available:()=>state.refinery.unlocked&&state.processedExports>=5,resultKind:'artifact',reward:7000,tech:'alienReactor'},
+ sigMine('obsidian_echo','ECO E-01',5,25000,9.5,()=>mines[4].unlocked&&state.processedExports>=8),
+ {id:'phase_anomaly','code':'ECO E-02',scanCost:36000,scanTime:10.2,pos:new THREE.Vector3(63,0,8),available:()=>state.refinery.unlocked&&state.processedExports>=15,resultKind:'anomaly',reward:12000,tech:'processHarmony'},
+ sigMine('plasma_echo','ECO F-01',6,60000,11.0,()=>mines[5].unlocked&&state.processedExports>=20),
+ sigMine('aether_echo','ECO G-01',7,170000,12.5,()=>mines[6].unlocked&&state.tech.alienReactor&&state.processedExports>=35)
+];
+const signalIds=new Set(signalDefs.map(s=>s.id)),signalsById=new Map();
+function createDiscoverySite(sig){
+  if(sig.resultKind==='mine')return null;const g=new THREE.Group();g.position.copy(sig.pos);g.visible=false;world.add(g);
+  if(sig.resultKind==='ruins'){for(const x of [-1.5,0,1.5]){const p=add(g,box(.45,2.2+Math.abs(x)*.3,.55,0x665d78,.82,.25,0x4e3a88,.18),x,1.15,0);p.rotation.z=x*.08}add(g,box(4.0,.42,.62,0x756b8a,.78,.28),0,2.45,0)}
+  else if(sig.resultKind==='energy'){for(let i=0;i<5;i++){const a=i/5*Math.PI*2,h=1.6+(i%2)*.8,c=add(g,mesh(new THREE.ConeGeometry(.28,h,5),0x78d8ff,.28,.18,0x3d9fd8,2.1),Math.cos(a)*1.5,h/2,Math.sin(a)*1.5);c.rotation.z=(i-2)*.08}const r=add(g,mesh(new THREE.TorusGeometry(2.2,.09,6,28),0x8be8ff,.25,.2,0x56d7ff,2.1),0,.3,0);r.rotation.x=Math.PI/2}
+  else if(sig.resultKind==='artifact'){add(g,cyl(1.6,2.0,.55,8,0x4b4659,.82,.4),0,.28,0);add(g,cyl(.35,.58,2.3,7,0x7b718f,.55,.52),0,1.5,0);add(g,mesh(new THREE.SphereGeometry(.58,12,8),0xd8c7ff,.18,.25,0x8f64ff,3.1),0,2.9,0)}
+  else if(sig.resultKind==='anomaly'){for(let i=0;i<3;i++){const r=add(g,mesh(new THREE.TorusGeometry(1.25+i*.48,.055,5,24),0xa78cff,.22,.24,0x7a5cff,2.0-i*.25),0,.55+i*.18,0);r.rotation.x=Math.PI/2+i*.16;r.rotation.y=i*.45}}
+  else {for(let i=0;i<7;i++){const a=i/7*Math.PI*2;mineralRock(g,Math.cos(a)*(1.0+Math.random()),.35,Math.sin(a)*(1.0+Math.random()),.55+Math.random()*.45,0x9fb9c7,0x436d7d)}}
+  return g
+}
+for(const sig of signalDefs){const g=new THREE.Group();g.position.copy(sig.pos);world.add(g);const ring=new THREE.Mesh(signalGeo,signalMat);ring.rotation.x=Math.PI/2;ring.position.y=.32;ring.castShadow=false;g.add(ring);const pole=new THREE.Mesh(signalPoleGeo,signalPoleMat);pole.position.y=1.15;pole.castShadow=false;g.add(pole);const orb=new THREE.Mesh(signalOrbGeo,signalOrbMat);orb.position.y=2.35;orb.castShadow=false;g.add(orb);sig.group=g;sig.ring=ring;sig.orb=orb;sig.label=makeLabel();sig.labelAnchor=sig.pos.clone().add(new THREE.Vector3(0,3.1,0));sig.site=createDiscoverySite(sig);sig.highlightUntil=0;g.visible=false;signalsById.set(sig.id,sig)}
+function signalDone(sig){return state.survey.completed.includes(sig.id)||(sig.resultKind==='mine'&&mines[sig.mineIndex].discovered)}
+function signalAvailable(sig){return !!state.survey.droneUnlocked&&!signalDone(sig)&&sig.available()}
+function surveyFlightSpeed(){return 8.4*Math.pow(1.20,state.survey.flight)}
+function surveyScanDuration(sig){return sig.scanTime*Math.pow(.78,state.survey.scan)}
+function surveyUpgradeCost(key){const lv=state.survey[key];if(lv>=3)return Infinity;return Math.round((key==='flight'?1800:2200)*Math.pow(2.15,lv))}
+function surveyDistance(sig){return Math.round(sig.pos.distanceTo(unloadPad))}
+function techName(key){return({gravLattice:'Malha gravitacional',solarResonance:'Ressonância fotônica',alienReactor:'Núcleo alienígena',processHarmony:'Harmônicos industriais',rareProspecting:'Prospecção profunda'})[key]||key}
+function completedDiscoveryCount(){let n=1;for(const s of signalDefs)if(signalDone(s))n++;return n}
+function availableSignalCount(){let n=0;for(const s of signalDefs)if(signalAvailable(s))n++;return n}
+function applyDiscoveryUnlock(sig,grantReward=true){
+  if(sig.resultKind==='mine'){const m=mines[sig.mineIndex];m.discovered=true;m.group.visible=true;updateMineEvolution(m);state.selected=m.index}
+  if(sig.tech)state.tech[sig.tech]=true;
+  if(grantReward&&sig.reward){state.money+=sig.reward;baseMoneyPopup(`+ ${fmt(sig.reward)} • descoberta`)}
+  if(sig.site)sig.site.visible=true
+}
+function discoveryMessage(sig){
+  if(sig.resultKind==='mine')return`DEPÓSITO DE ${defs[sig.mineIndex].res.toUpperCase()} LOCALIZADO`;
+  if(sig.resultKind==='ruins')return'RUÍNAS ALIENÍGENAS CATALOGADAS';
+  if(sig.resultKind==='energy')return'FONTE DE ENERGIA EXÓTICA MAPEADA';
+  if(sig.resultKind==='artifact')return'ARTEFATO TECNOLÓGICO RECUPERADO';
+  if(sig.resultKind==='anomaly')return'ANOMALIA DE FASE COMPREENDIDA';
+  return'RECURSO RARO RECUPERADO'
+}
+function revealSignal(sig){
+  if(signalDone(sig))return;if(!state.survey.completed.includes(sig.id))state.survey.completed.push(sig.id);applyDiscoveryUnlock(sig,true);sig.highlightUntil=simTime+6;
+  const msg=discoveryMessage(sig);toast(msg);pushEventHistory(msg);renderEventFeed();cueCamera(sig.pos);state.survey.activeSignal=null;surveyRuntime.phase='return';
+  if(sig.resultKind==='mine')state.manageTab='mine';else state.manageTab='explore';
+  postEconomyChange();save()
+}
+function beginSurvey(sig){
+  if(!signalAvailable(sig)||state.survey.activeSignal||surveyRuntime.phase!=='idle')return false;if(!spend(sig.scanCost))return false;
+  state.survey.activeSignal=sig.id;surveyRuntime.phase='outbound';surveyRuntime.signal=sig;surveyRuntime.scanRemaining=surveyRuntime.scanTotal=surveyScanDuration(sig);surveyDrone.visible=true;surveyScanner.visible=false;save();toast(`Drone enviado para ${sig.code}`);updateManage();return true
+}
+function restoreSurveyRuntimeAfterLoad(){const id=state.survey.activeSignal,sig=id?signalsById.get(id):null;if(sig&&!signalDone(sig)){surveyRuntime.phase='outbound';surveyRuntime.signal=sig;surveyRuntime.scanRemaining=surveyRuntime.scanTotal=surveyScanDuration(sig);surveyDrone.position.copy(surveyHome)}else{state.survey.activeSignal=null;surveyRuntime.phase='idle';surveyRuntime.signal=null}}
+const surveyHoverTarget=new THREE.Vector3();
+function moveDroneTo(target,dt){const p=surveyDrone.position,dx=target.x-p.x,dy=target.y-p.y,dz=target.z-p.z,dist=Math.hypot(dx,dy,dz);if(dist<.16)return true;const step=Math.min(dist,surveyFlightSpeed()*Math.max(.62,energyState.factor)*dt);p.x+=dx/dist*step;p.y+=dy/dist*step;p.z+=dz/dist*step;surveyDrone.rotation.y=angleLerp(surveyDrone.rotation.y,Math.atan2(dx,dz),clamp(dt*5,0,1));return dist-step<.16}
+function updateSurveyDrone(dt,raw,t){
+  surveyDrone.visible=state.survey.droneUnlocked;if(!state.survey.droneUnlocked)return;surveyDroneLight.material.emissiveIntensity=1.5+nightFactor*1.8;
+  if(surveyRuntime.phase==='idle'){surveyScanner.visible=false;surveyDrone.position.set(Math.cos(t*.28)*8.4,6.4+Math.sin(t*.9)*.28,7.1+Math.sin(t*.28)*5.8);surveyDrone.rotation.y=-t*.28+Math.PI/2;return}
+  const sig=surveyRuntime.signal;if(!sig){surveyRuntime.phase='idle';return}const hover=surveyHoverTarget.set(sig.pos.x,6.8,sig.pos.z);
+  if(surveyRuntime.phase==='outbound'){if(moveDroneTo(hover,dt)){surveyRuntime.phase='scan';surveyRuntime.scanRemaining=surveyRuntime.scanTotal=surveyScanDuration(sig);surveyScanner.visible=true}}
+  else if(surveyRuntime.phase==='scan'){surveyScanner.visible=true;surveyScanner.rotation.z+=raw*3.2;surveyScanner.scale.setScalar(1+Math.sin(t*5)*.18);surveyRuntime.scanRemaining-=dt*Math.max(.62,energyState.factor);surveyDrone.position.y=6.8+Math.sin(t*2.8)*.18;if(surveyRuntime.scanRemaining<=0){revealSignal(sig);surveyScanner.visible=false}}
+  else if(surveyRuntime.phase==='return'){surveyScanner.visible=false;if(moveDroneTo(surveyHome,dt)){surveyRuntime.phase='idle';surveyRuntime.signal=null;surveyDrone.position.copy(surveyHome);updateManage()}}
+}
+function updateSignalAvailability(){
+  if(!state.survey.droneUnlocked)return;let changed=false;for(const sig of signalDefs){if(signalAvailable(sig)&&!state.survey.seen.includes(sig.id)){state.survey.seen.push(sig.id);toast(`Novo sinal detectado: ${sig.code}`);changed=true}}if(changed){save();if(state.manageTab==='explore')updateManage();}
+}
+function updateSignalVisuals(t){
+  for(const sig of signalDefs){const done=signalDone(sig),active=state.survey.activeSignal===sig.id,highlight=sig.highlightUntil>simTime,show=highlight||active||signalAvailable(sig);sig.group.visible=show;sig.ring.rotation.z=t*.38+(sig.mineIndex||0);sig.group.scale.setScalar(highlight?1.1+Math.sin(t*6)*.08:1);sig.orb.material=signalOrbMat;if(sig.site)sig.site.visible=done;sig.shouldShow=show;if(!show)sig.label.style.display='none';if(show){sig.label.classList.toggle('locked',!active);const txt=active?`<b>${sig.code}</b><br>DRONE EM OPERAÇÃO`:`<b>◈ ${sig.code}</b><br>SINAL DESCONHECIDO • ${fmt(sig.scanCost)}`;if(sig._labelText!==txt){sig._labelText=txt;sig.label.innerHTML=txt}}}
+}
+function nextSurveyHint(){if(!state.survey.droneUnlocked)return'Construa o drone para começar a transformar ecos orbitais em descobertas reais.';if(availableSignalCount())return'Há sinais ao alcance. Escolha um eco e envie o drone.';return'Nenhum novo eco está estável. Expanda operações, entregas ou indústria para ampliar a telemetria.'}
+
+function tu(typeId){return state.transportUpgrades[typeId]}
+function vehicleOperationalSpeedMul(bot){const wearPenalty=1-clamp((bot.wear-.72)/.28,0,.18),eventMul=bot.type.id==='skimmer'?colonyModifiers.skimmerSpeedMul:bot.type.wheels?colonyModifiers.wheeledSpeedMul:1;return wearPenalty*eventMul}
+function botMaxSpeed(bot){const tech=bot.type.id==='skimmer'&&state.tech.gravLattice?1.08:1;return bot.type.baseSpeed*Math.pow(1.12,tu(bot.type.id).speed)*vehicleOperationalSpeedMul(bot)*tech}
+function botAcceleration(bot){return bot.type.baseAcceleration*Math.pow(1.18,tu(bot.type.id).acceleration)}
+function botCapacity(bot){return bot.type.baseCapacity+bot.type.capacityStep*tu(bot.type.id).capacity}
+function botLoadPerUnit(bot){return bot.type.baseLoad*Math.pow(.82,tu(bot.type.id).load)}
+function botUnloadPerUnit(bot){return bot.type.baseUnload*Math.pow(.82,tu(bot.type.id).unload)}
+function totalLoadTime(bot,units){return .18+botLoadPerUnit(bot)*Math.max(1,units)}
+function totalUnloadTime(bot,units){return .16+botUnloadPerUnit(bot)*Math.max(1,units)}
+function estimateOneWay(distance,maxSpeed,accel){
+  const transition=maxSpeed*maxSpeed/Math.max(accel,.01);
+  if(distance<=transition)return 2*Math.sqrt(distance/Math.max(accel,.01));
+  return 2*maxSpeed/Math.max(accel,.01)+(distance-transition)/Math.max(maxSpeed,.01)
+}
+function transportCount(typeId){let n=0;for(const b of bots)if(b.type.id===typeId)n++;return n}
+function transportBuyCost(typeId){const t=transportTypes[typeId],n=transportCount(typeId);return Math.round(t.buyBase*Math.pow(1.62,n))}
+function transportUpgradeCost(typeId,key){
+  const type=transportTypes[typeId],level=tu(typeId)[key];if(level>=type.upgradeMax[key])return Infinity;
+  const classMul=typeId==='rover'?1:typeId==='crawler'?3.1:7.2;
+  const base={speed:220,acceleration:180,capacity:620,load:170,unload:165}[key];
+  const growth=key==='capacity'?2.02:1.82;
+  return Math.round(base*classMul*Math.pow(growth,level))
+}
+function setCargoVisual(bot,mineIndex,units,productId=null){
+  const slots=bot.cargoSlots,cap=Math.max(1,botCapacity(bot)),shown=units>0?Math.max(1,Math.ceil(units/cap*slots.length)):0;
+  const material=productId?processedCargoMats.get(productId):cargoMats[mineIndex];
+  for(let i=0;i<slots.length;i++){const slot=slots[i];slot.visible=i<shown;if(material)slot.material=material}
+}
+function createBot(id,typeId='rover'){
+  const type=transportTypes[typeId]||transportTypes.rover,g=new THREE.Group();world.add(g);
+  let bodyW=1.65,bodyH=.62,bodyD=1.8,cabinW=1.1,cabinY=1.35,cargoSlotsCount=4;
+  if(typeId==='crawler'){bodyW=2.75;bodyH=.92;bodyD=3.15;cabinW=1.65;cabinY=1.72;cargoSlotsCount=6}
+  if(typeId==='skimmer'){bodyW=1.9;bodyH=.48;bodyD=2.15;cabinW=1.05;cabinY=1.28;cargoSlotsCount=4}
+  add(g,box(bodyW,bodyH,bodyD,type.color,.48,.58),0,.68,0);
+  const cabin=add(g,box(cabinW,typeId==='crawler'?.88:.68,typeId==='crawler'?1.28:1.02,0x263744,.22,.48,0x183448,.16),0,cabinY,-.28);
+  const forks=add(g,new THREE.Group(),0,.28,typeId==='crawler'?1.72:1.16);
+  add(forks,box(.13,.09,typeId==='crawler'?1.9:1.45,0x484e52,.55,.75),typeId==='crawler'?-.58:-.38,0,.56);
+  add(forks,box(.13,.09,typeId==='crawler'?1.9:1.45,0x484e52,.55,.75),typeId==='crawler'?.58:.38,0,.56);
+  const wheels=[];
+  if(type.wheels){
+    const wx=typeId==='crawler'?1.28:.78,wr=typeId==='crawler'?.48:.34,zs=typeId==='crawler'?[-1.05,0,1.05]:[-.62,.62];
+    for(const z of zs)for(const x of [-wx,wx]){const w=add(g,cyl(wr,wr,.30,9,0x25262c,.9,.18),x,.34,z);w.rotation.z=Math.PI/2;wheels.push(w)}
+  }else{
+    for(const x of [-.72,.72])for(const z of [-.72,.72])add(g,mesh(new THREE.CylinderGeometry(.32,.44,.18,8),0x456d78,.28,.4,type.accent,2.7),x,.28,z);
+    const halo=add(g,mesh(new THREE.TorusGeometry(1.05,.045,5,22),type.accent,.3,.2,type.accent,1.35),0,.34,0);halo.rotation.x=Math.PI/2
+  }
+  const mastH=typeId==='crawler'?2.22:1.82;
+  const beacon=add(g,mesh(new THREE.SphereGeometry(.11,7,5),0xffa45f,.25,.1,type.accent,2.1),0,mastH,-.28);
+  const headlight=add(g,box(typeId==='crawler'?1.15:.8,.12,.12,0x9ad9e6,.3,.2,type.accent,.95),0,typeId==='crawler'?1.62:1.45,-(bodyD/2+.02));
+  if(typeId==='crawler'){add(g,box(2.25,.16,1.4,0x41474c,.6,.65),0,1.17,.72);add(g,box(2.2,.22,.22,type.accent,.42,.55,type.accent,.55),0,.92,1.42)}
+  if(typeId==='skimmer'){const fin=add(g,box(2.2,.08,.76,0x34606a,.3,.5,type.accent,.52),0,.72,-.58);fin.rotation.z=.02;add(g,box(.18,.18,1.4,type.accent,.3,.5,type.accent,1.2),0,.78,.5)}
+  const idMark=add(g,box(.42,.07,.18,0xe7edf1,.4,.25,type.accent,.7),0,typeId==='crawler'?1.45:1.22,.72);idMark.rotation.y=(id%5)*.04;
+
+  const speedVisual=new THREE.Group(),capacityVisual=new THREE.Group(),accelVisual=new THREE.Group(),loadVisual=new THREE.Group(),unloadVisual=new THREE.Group();
+  g.add(speedVisual,capacityVisual,accelVisual,loadVisual,unloadVisual);
+  for(const x of [-.55,.55]){const e=add(speedVisual,cyl(.11,.17,.62,7,0x52636c,.42,.66,type.accent,.6),x,.82,-bodyD/2);e.rotation.x=Math.PI/2}
+  add(capacityVisual,box(typeId==='crawler'?2.25:1.42,.13,typeId==='crawler'?1.25:.95,0x555d62,.56,.72),0,typeId==='crawler'?1.26:1.02,.74);
+  for(const x of [-.66,.66])add(accelVisual,mesh(new THREE.TorusGeometry(.18,.055,5,12),type.accent,.35,.35,type.accent,.65),x,.7,-.15);
+  for(const x of [-.66,.66])add(loadVisual,box(.09,.68,.09,0x9ca5a9,.45,.68,type.accent,.3),x,.72,.72);
+  add(unloadVisual,box(.85,.08,.18,type.accent,.35,.5,type.accent,.65),0,1.05,bodyD/2-.18);
+
+  const cargoGroup=new THREE.Group();cargoGroup.position.set(0,typeId==='crawler'?1.35:.92,typeId==='crawler'?.55:.62);g.add(cargoGroup);
+  const cargoSlots=[];
+  for(let i=0;i<cargoSlotsCount;i++){
+    const c=new THREE.Mesh(cargoGeo,cargoMats[0]);c.castShadow=true;c.receiveShadow=true;c.visible=false;
+    const col=i%2,row=Math.floor(i/2);c.position.set((col-.5)*(typeId==='crawler'?.86:.72),row*.58,0);cargoGroup.add(c);cargoSlots.push(c)
+  }
+
+  const lane=id%8,row=Math.floor(id/8),hoverY=typeId==='skimmer'?.38:0,spawn=new THREE.Vector3(-5.4+lane*1.5,hoverY,5.2+row*1.65);
+  g.position.copy(spawn);
+  const bot={id,type,mesh:g,cabin,cabinBaseY:cabinY,forks,wheels,beacon,headlight,spawn,hoverY,
+   speedVisual,capacityVisual,accelVisual,loadVisual,unloadVisual,cargoSlots,
+   state:'idle',goal:new THREE.Vector3(),routeMine:null,reservation:null,cargoUnits:0,cargoValue:0,cargoMineIndex:-1,cargoKind:'raw',cargoProductId:null,cargoDestination:'export',
+   timer:0,operationDuration:0,currentSpeed:0,trackAccum:0,dustAccum:0,moving:false,bob:Math.random()*6.28,queued:false,nextDispatchAt:0,wear:0,maintenanceDue:false,maintenanceNotified:false,maintenanceCount:0,serviceFx:0};
+  bots.push(bot);botById.set(id,bot);if(typeId==='skimmer')skimmerBots.push(bot);return bot
+}
+function refreshTransportVisuals(typeId=null){
+  for(const b of bots){
+    if(typeId&&b.type.id!==typeId)continue;const u=tu(b.type.id);
+    b.speedVisual.visible=u.speed>0;b.capacityVisual.visible=u.capacity>0;b.accelVisual.visible=u.acceleration>0;b.loadVisual.visible=u.load>0;b.unloadVisual.visible=u.unload>0;
+    b.speedVisual.scale.setScalar(1+Math.min(u.speed,5)*.04);b.capacityVisual.scale.z=1+Math.min(u.capacity,5)*.08;
+    b.accelVisual.scale.setScalar(1+Math.min(u.acceleration,4)*.05);b.loadVisual.scale.y=1+Math.min(u.load,4)*.05;b.unloadVisual.scale.x=1+Math.min(u.unload,4)*.06
+  }
+}
+
+
+// --- Tripulação decorativa: máximo fixo, grafo pequeno de pontos e nenhuma busca de caminho. ---
+const MAX_CREW=10;
+const crewGeo={body:new THREE.BoxGeometry(.42,.55,.28),helmet:new THREE.SphereGeometry(.29,8,6),visor:new THREE.BoxGeometry(.34,.16,.06),limb:new THREE.BoxGeometry(.13,.5,.13),pack:new THREE.BoxGeometry(.28,.38,.16),tool:new THREE.BoxGeometry(.08,.46,.08),parcel:new THREE.BoxGeometry(.28,.22,.24)};
+const crewSuitMats=[mat(0xe7ecef,.72,.18),mat(0xcfd9e5,.72,.18),mat(0xe6d9bd,.72,.18)],crewJointMat=mat(0x46515b,.72,.35),crewVisorMat=mat(0x243b4b,.18,.52,0x183b51,.38),crewPackMat=mat(0x65717a,.68,.42),crewToolMat=mat(0xf0bb63,.5,.45,0xd98728,.25),crewParcelMat=mat(0x8aa0aa,.65,.35);
+function sharedPart(g,geo,material,x,y,z,cast=false){const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=false;g.add(m);return m}
+const crewWaypoints=[
+ {p:new THREE.Vector3(0,0,9.7),tag:'observe',stage:0,links:[1,6,7]},
+ {p:new THREE.Vector3(5.5,0,4.6),tag:'carry',stage:0,links:[0,2,7,10]},
+ {p:new THREE.Vector3(5.4,0,-2.1),tag:'machine',stage:1,links:[1,3,8]},
+ {p:new THREE.Vector3(-5.8,0,-2.2),tag:'observe',stage:0,links:[2,4,6]},
+ {p:new THREE.Vector3(-8.2,0,-3.8),tag:'machine',stage:1,links:[3,5,11]},
+ {p:new THREE.Vector3(-7.0,0,6.0),tag:'maintenance',stage:0,links:[0,4,6]},
+ {p:new THREE.Vector3(0,0,6.25),tag:'inside',stage:0,links:[0,3,5,7]},
+ {p:new THREE.Vector3(2.35,0,6.8),tag:'social',stage:0,links:[0,1,6,10]},
+ {p:new THREE.Vector3(9.25,0,-6.55),tag:'carry',stage:2,requires:'refinery',links:[2,9]},
+ {p:new THREE.Vector3(13.0,0,-6.5),tag:'machine',stage:2,requires:'refinery',links:[8,10]},
+ {p:new THREE.Vector3(11.1,0,5.7),tag:'carry',stage:2,requires:'refinery',links:[1,7,9]},
+ {p:new THREE.Vector3(-12.1,0,-4.4),tag:'machine',stage:2,links:[4]}
+];
+const astronauts=[];
+function createAstronaut(id){const g=new THREE.Group();g.visible=false;world.add(g);const suit=crewSuitMats[id%crewSuitMats.length];const torso=sharedPart(g,crewGeo.body,suit,0,.78,0,true),helmet=sharedPart(g,crewGeo.helmet,suit,0,1.25,0,true),visor=sharedPart(g,crewGeo.visor,crewVisorMat,0,1.27,.25,false);sharedPart(g,crewGeo.pack,crewPackMat,0,.82,-.23,false);const leftArm=new THREE.Group(),rightArm=new THREE.Group(),leftLeg=new THREE.Group(),rightLeg=new THREE.Group();leftArm.position.set(-.29,.93,0);rightArm.position.set(.29,.93,0);leftLeg.position.set(-.13,.48,0);rightLeg.position.set(.13,.48,0);g.add(leftArm,rightArm,leftLeg,rightLeg);sharedPart(leftArm,crewGeo.limb,suit,0,-.2,0,false);sharedPart(rightArm,crewGeo.limb,suit,0,-.2,0,false);sharedPart(leftLeg,crewGeo.limb,crewJointMat,0,-.22,0,false);sharedPart(rightLeg,crewGeo.limb,crewJointMat,0,-.22,0,false);const tool=sharedPart(rightArm,crewGeo.tool,crewToolMat,0,-.47,.04,false);tool.visible=false;const parcel=sharedPart(g,crewGeo.parcel,crewParcelMat,0,.72,.31,false);parcel.visible=false;const a={id,group:g,torso,helmet,visor,leftArm,rightArm,leftLeg,rightLeg,tool,parcel,active:false,state:'idle',waypoint:id%2?7:0,targetIndex:id%2?0:7,timer:0,yieldTimer:0,speed:.95+Math.random()*.22,phase:Math.random()*6.28,activity:'observe'};g.position.copy(crewWaypoints[a.waypoint].p);astronauts.push(a);return a}
+for(let i=0;i<MAX_CREW;i++)createAstronaut(i);
+function crewPopulationTarget(){const st=baseProgressStage();return st<=0?2:st===1?3:st===2?4:st===3?5:st===4?7:9}
+function crewWaypointAvailable(w){return baseProgressStage()>=w.stage&&(!w.requires||(w.requires==='refinery'&&state.refinery.unlocked))}
+function setCrewActive(a,on){a.active=on;a.group.visible=on;if(on){a.state='idle';a.timer=.2+Math.random();a.yieldTimer=0;a.group.position.copy(crewWaypoints[a.waypoint].p)}else{a.tool.visible=false;a.parcel.visible=false}}
+function updateCrewPopulation(){const targetCount=crewPopulationTarget();for(let i=0;i<astronauts.length;i++)if(astronauts[i].active!==(i<targetCount))setCrewActive(astronauts[i],i<targetCount)}
+function chooseCrewDestination(a){const current=crewWaypoints[a.waypoint],links=current.links.filter(i=>crewWaypointAvailable(crewWaypoints[i]));let choices=links.length?links:crewWaypoints.map((w,i)=>crewWaypointAvailable(w)?i:-1).filter(i=>i>=0&&i!==a.waypoint);if(workshop.activeBot&&crewWaypointAvailable(crewWaypoints[5])&&Math.random()<.34)choices=[5,5,...choices];const next=choices[Math.floor(Math.random()*choices.length)]??0;a.targetIndex=next;a.state='walk';a.activity='walk';a.timer=0;a.group.visible=true;a.tool.visible=false;a.parcel.visible=crewWaypoints[next].tag==='carry'&&Math.random()<.55}
+function beginCrewActivity(a){a.waypoint=a.targetIndex;const w=crewWaypoints[a.waypoint];a.activity=w.tag;a.state=w.tag==='inside'?'inside':'activity';a.timer=(w.tag==='maintenance'&&workshop.activeBot?3.5:1.8)+Math.random()*3.5;a.parcel.visible=w.tag==='carry'&&Math.random()<.45;a.tool.visible=w.tag==='maintenance'||w.tag==='machine';if(w.tag==='inside'){a.group.visible=false;a.parcel.visible=false;a.tool.visible=false}}
+function crewSafetyTick(){for(const a of astronauts){if(!a.active||a.state!=='walk'||a.yieldTimer>0)continue;let nearest=null,best=5.3;for(const b of activeBots){if(!b.moving)continue;const dx=b.mesh.position.x-a.group.position.x,dz=b.mesh.position.z-a.group.position.z,d2=dx*dx+dz*dz;if(d2<best){best=d2;nearest=b}}if(nearest){a.yieldTimer=.38+Math.random()*.35;a.group.rotation.y=Math.atan2(nearest.mesh.position.x-a.group.position.x,nearest.mesh.position.z-a.group.position.z)}}}
+function updateCrew(dt,t){for(const a of astronauts){if(!a.active)continue;a.yieldTimer=Math.max(0,a.yieldTimer-dt);if(a.state==='idle'){a.timer-=dt;if(a.timer<=0)chooseCrewDestination(a);continue}if(a.state==='inside'){a.timer-=dt;if(a.timer<=0){a.group.visible=true;chooseCrewDestination(a)}continue}if(a.state==='activity'){a.timer-=dt;const pulse=Math.sin(t*4+a.phase);if(a.activity==='maintenance'||a.activity==='machine'){a.rightArm.rotation.x=-.65+pulse*.38;a.leftArm.rotation.x=.2-pulse*.15}else if(a.activity==='social'){a.rightArm.rotation.z=.18+pulse*.12;a.group.rotation.y+=dt*.16}else if(a.activity==='observe'){a.helmet.rotation.y=Math.sin(t*.8+a.phase)*.38}else if(a.activity==='carry'){a.leftArm.rotation.x=-.42;a.rightArm.rotation.x=-.42}if(a.timer<=0){a.rightArm.rotation.set(0,0,0);a.leftArm.rotation.set(0,0,0);chooseCrewDestination(a)}continue}if(a.state==='walk'){const target=crewWaypoints[a.targetIndex].p,p=a.group.position,dx=target.x-p.x,dz=target.z-p.z,dist2=dx*dx+dz*dz;if(dist2<.06){beginCrewActivity(a);continue}if(a.yieldTimer>0){a.leftLeg.rotation.x*=.72;a.rightLeg.rotation.x*=.72;continue}const dist=Math.sqrt(dist2),step=Math.min(dist,a.speed*dt);p.x+=dx/dist*step;p.z+=dz/dist*step;a.group.rotation.y=angleLerp(a.group.rotation.y,Math.atan2(dx,dz),clamp(dt*5,0,1));const gait=Math.sin(t*7.5+a.phase)*.42;a.leftLeg.rotation.x=gait;a.rightLeg.rotation.x=-gait;a.leftArm.rotation.x=-gait*.58-(a.parcel.visible?0.3:0);a.rightArm.rotation.x=gait*.58-(a.parcel.visible?0.3:0)}}}
+function activeCrewCount(){let n=0;for(const a of astronauts)if(a.active)n++;return n}
+function assignCrewToWorkshop(){if(!workshop.activeBot)return;if(astronauts.some(a=>a.active&&(a.waypoint===5||a.targetIndex===5)))return;let a=null,best=Infinity;const wp=crewWaypoints[5].p;for(const c of astronauts){if(!c.active||c.state==='inside')continue;const dx=c.group.position.x-wp.x,dz=c.group.position.z-wp.z,d2=dx*dx+dz*dz;if(d2<best){best=d2;a=c}}if(!a)return;a.targetIndex=5;a.state='walk';a.activity='walk';a.timer=0;a.group.visible=true;a.tool.visible=false;a.parcel.visible=false}
+
+function spend(v){if(state.money<v)return false;state.money-=v;return true}
+const toastEntries=[];function toast(s){while(toastEntries.length>=4){const old=toastEntries.shift();clearTimeout(old.timer);old.e.remove()}const e=document.createElement('div');e.className='toast';e.textContent=s;$('#toasts').appendChild(e);const entry={e,timer:0};entry.timer=setTimeout(()=>{e.remove();const i=toastEntries.indexOf(entry);if(i>=0)toastEntries.splice(i,1)},2500);toastEntries.push(entry)}
+const moneyPopups=[],incomeEvents=[];
+const popupProject=new THREE.Vector3();
+function baseMoneyPopup(text){
+  while(moneyPopups.length>=12){const old=moneyPopups.shift();old.e.remove()}
+  const e=document.createElement('div');e.className='moneyGain';e.textContent=text;$('#ui').appendChild(e);moneyPopups.push({e,life:1.35,max:1.35})
+}
+function updateMoneyPopups(dt){
+  popupProject.set(0,7.4,0).project(camera);const x=(popupProject.x*.5+.5)*innerWidth,y=(-popupProject.y*.5+.5)*innerHeight;
+  for(let i=moneyPopups.length-1;i>=0;i--){const q=moneyPopups[i];q.life-=dt;const k=1-q.life/q.max;q.e.style.left=x+'px';q.e.style.top=(y-k*34)+'px';q.e.style.opacity=String(clamp(q.life/.55,0,1));q.e.style.transform=`translate(-50%,-50%) scale(${1+k*.16})`;if(q.life<=0){q.e.remove();moneyPopups.splice(i,1)}}
+}
+function recordIncome(v){
+  const now=performance.now();incomeEvents.push({t:now,v});while(incomeEvents.length&&now-incomeEvents[0].t>60000)incomeEvents.shift();
+  if(incomeEvents.length>400)incomeEvents.splice(0,incomeEvents.length-400)
+}
+
+let simTime=0,reservationSeq=1,industryAccum=0,energyAccum=0;
+const refinery={inputs:new Map(),outputs:new Map(),outputLots:new Map(),inputReserved:0,outputReserved:new Map(),active:null};
+const warehouse={stock:new Map(),lots:new Map(),reserved:new Map(),inboundReserved:0};
+const dispatcher={queue:[],head:0,waitingCount:0,accum:0,nextSweep:0,reservations:new Map()};
+const workshop={activeBot:null,completed:0};
+const eventHistory=[];
+const eventManager={active:null,nextAt:75,lastId:null,accum:0};
+function randomUnlockedMine(preferRare=false){const list=mines.filter(m=>m.unlocked&&(!preferRare||m.index>0));const pool=list.length?list:mines.filter(m=>m.unlocked);return pool[Math.floor(Math.random()*Math.max(1,pool.length))]||mines[0]}
+const eventDefs=[
+ {id:'dust_storm',kind:'AMBIENTE',tone:'bad',minDuration:34,maxDuration:48,canStart:()=>true,build:()=>({}),title:()=> 'Tempestade de poeira',text:()=> 'Visibilidade baixa e veículos terrestres 15% mais lentos.',apply:()=>{colonyModifiers.wheeledSpeedMul=.85;colonyModifiers.skimmerSpeedMul=.96},visual:'dust'},
+ {id:'em_storm',kind:'AMBIENTE',tone:'bad',minDuration:28,maxDuration:42,canStart:()=>transportCount('skimmer')>0,build:()=>({}),title:()=> 'Tempestade eletromagnética',text:()=> 'Skimmers operam temporariamente a 72% da velocidade.',apply:()=>{colonyModifiers.skimmerSpeedMul=.72},visual:'em'},
+ {id:'mineral_discovery',kind:'CIÊNCIA',tone:'good',minDuration:42,maxDuration:62,canStart:()=>state.deliveries>5,build:()=>({mine:randomUnlockedMine(true)}),title:c=> 'Janela geoquímica',text:c=> `${c.mine.def.res} vale +25% durante a janela de análise.`,apply:c=>{colonyModifiers.resourceValueMul[c.mine.index]=1.25}},
+ {id:'orbital_demand',kind:'ECONOMIA',tone:'good',minDuration:38,maxDuration:58,canStart:()=>state.deliveries>12,build:()=>({mine:randomUnlockedMine(false)}),title:c=> 'Demanda orbital',text:c=> `Contratos orbitais pagam +35% por ${c.mine.def.res}.`,apply:c=>{colonyModifiers.resourceValueMul[c.mine.index]=1.35}},
+ {id:'industrial_efficiency',kind:'CIÊNCIA',tone:'good',minDuration:36,maxDuration:52,canStart:()=>state.refinery.unlocked,build:()=>({}),title:()=> 'Eficiência industrial',text:()=> 'Refinaria processa 30% mais rápido e consome 15% menos.',apply:()=>{colonyModifiers.refinerySpeedMul=1.30;colonyModifiers.refineryEnergyMul=.85}}
+];
+function setEventVisual(def){const tint=$('#eventTint');tint.className=def?.visual||'';scene.fog.density=def?.visual==='dust'?0.017:0.0115;ambientDust.material.opacity=def?.visual==='dust'?0.58:0.32}
+function pushEventHistory(text){eventHistory.unshift(text);if(eventHistory.length>4)eventHistory.length=4}
+function renderEventFeed(){const active=eventManager.active,kind=$('#eventKind'),body=$('#eventActive'),timer=$('#eventTimer'),history=$('#eventHistory');if(active){kind.textContent=active.def.kind;body.innerHTML=`<strong>${active.def.title(active.ctx)}</strong><br>${active.def.text(active.ctx)}`;body.className='eventActive '+(active.def.tone==='good'?'eventGood':'eventBad');timer.textContent=`${Math.ceil(active.remaining)}s restantes • efeito temporário`}else{kind.textContent='ROTINA';body.className='eventActive';body.textContent='Nenhum evento extraordinário no momento.';timer.textContent=`Próxima janela possível em ~${Math.max(0,Math.ceil(eventManager.nextAt-simTime))}s.`}history.innerHTML=eventHistory.length?eventHistory.map(x=>`• ${x}`).join('<br>'):'Os eventos serão ocasionais e não exigem microgerenciamento.'}
+function startRandomEvent(){const eligible=eventDefs.filter(d=>d.canStart()&&d.id!==eventManager.lastId);if(!eligible.length){eventManager.nextAt=simTime+35;return}const def=eligible[Math.floor(Math.random()*eligible.length)],ctx=def.build(),duration=def.minDuration+Math.random()*(def.maxDuration-def.minDuration);resetColonyModifiers();def.apply(ctx);eventManager.active={def,ctx,duration,remaining:duration};eventManager.lastId=def.id;setEventVisual(def);const title=def.title(ctx);pushEventHistory(`${title} começou.`);toast(`${title} — ${def.text(ctx)}`);renderEventFeed();updateEnergy(.01)}
+function finishEvent(){const e=eventManager.active;if(!e)return;pushEventHistory(`${e.def.title(e.ctx)} terminou.`);eventManager.active=null;resetColonyModifiers();setEventVisual(null);eventManager.nextAt=simTime+85+Math.random()*95;renderEventFeed();updateEnergy(.01)}
+function updateEvents(step){if(eventManager.active){eventManager.active.remaining-=step;if(eventManager.active.remaining<=0)finishEvent()}else if(simTime>=eventManager.nextAt)startRandomEvent();renderEventFeed()}
+
+function refineryInputCapacity(){return 8+state.refinery.input*6}
+function refineryOutputCapacity(){return 8+state.refinery.output*6}
+function warehouseCapacity(){return 18+state.refinery.output*10}
+function mapTotal(map){let n=0;for(const v of map.values())n+=v;return n}
+function mapGet(map,key){return map.get(key)||0}
+function mapAdd(map,key,n){map.set(key,Math.max(0,mapGet(map,key)+n));if(map.get(key)<=0)map.delete(key)}
+function refineryOutputAvailable(id){return Math.max(0,mapGet(refinery.outputs,id)-mapGet(refinery.outputReserved,id))}
+function warehouseAvailable(id){return Math.max(0,mapGet(warehouse.stock,id)-mapGet(warehouse.reserved,id))}
+function addProductLot(container,id,units,unitValue){if(units<=0)return;let arr=container.get(id);if(!arr){arr=[];container.set(id,arr)}const last=arr[arr.length-1];if(last&&last.value===unitValue)last.units+=units;else arr.push({units,value:unitValue})}
+function takeProductLots(stockMap,lotsMap,id,units){let want=Math.min(units,mapGet(stockMap,id)),left=want,total=0,taken=0,arr=lotsMap.get(id)||[];while(left>0&&arr.length){const lot=arr[0],n=Math.min(left,lot.units);lot.units-=n;left-=n;taken+=n;total+=n*lot.value;if(lot.units<=0)arr.shift()}mapAdd(stockMap,id,-taken);if(!arr.length)lotsMap.delete(id);return{units:taken,total}}
+function refineryProcessTime(recipe){const tech=state.tech.processHarmony?1.12:1;return recipe.time*Math.pow(.82,state.refinery.speed)/tech}
+function effectiveRefineryProcessTime(recipe){return refineryProcessTime(recipe)/Math.max(.01,colonyModifiers.refinerySpeedMul)}
+function refineryEnergy(recipe){return recipe.energy*Math.pow(.88,state.refinery.efficiency)*colonyModifiers.refineryEnergyMul}
+function baseProcessedUnitValue(recipe){const mine=mines[recipe.inputMine];return Math.round(baseValueOf(mine)*recipe.valueMul)}
+function processedUnitValue(recipe){return Math.round(baseProcessedUnitValue(recipe)*(colonyModifiers.resourceValueMul[recipe.inputMine]||1))}
+function refineryUpgradeCost(key){const lv=state.refinery[key],base={speed:22000,input:18000,output:21000,efficiency:26000}[key];return lv>=5?Infinity:Math.round(base*Math.pow(1.95,lv))}
+function powerCost(kind){const p=state.power;if(kind==='solar')return Math.round(900*Math.pow(1.55,p.solar-2));if(kind==='generator')return Math.round(7800*Math.pow(1.7,p.generators));if(kind==='battery')return Math.round(6500*Math.pow(1.72,p.batteries));return 420000}
+function batteryMax(){return state.power.batteries*55}
+function batteryDischargeMax(){return state.power.batteries*18}
+function solarPower(){return state.power.solar*12*(.35+.65*dayFactor)*(state.tech.solarResonance?1.15:1)}
+function baseGeneration(){return solarPower()+state.power.generators*42+(state.power.reactor?220:0)}
+function currentDemand(){let d=0;for(const m of mines)if(m.unlocked)d+=2.2;if(state.refinery.unlocked)d+=3;if(refinery.active)d+=refineryEnergy(recipeById.get(refinery.active.recipeId));if(state.refinery.unlocked)d+=1.5;if(state.survey.activeSignal)d+=3;return d}
+const energyState={demand:0,generation:0,available:0,factor:1,batteryFlow:0};
+function updateEnergy(step){const demand=currentDemand(),gen=baseGeneration(),max=batteryMax();let available=gen,flow=0;if(gen>demand&&max>0){const charge=Math.min(gen-demand,state.power.batteries*14,(max-state.power.batteryCharge)/Math.max(step,.001));state.power.batteryCharge=Math.min(max,state.power.batteryCharge+charge*step);flow=charge}else if(demand>gen&&state.power.batteryCharge>0){const discharge=Math.min(demand-gen,batteryDischargeMax(),state.power.batteryCharge/Math.max(step,.001));state.power.batteryCharge=Math.max(0,state.power.batteryCharge-discharge*step);available+=discharge;flow=-discharge}energyState.demand=demand;energyState.generation=gen;energyState.available=available;energyState.factor=demand<=.01?1:clamp(available/demand,.15,1);energyState.batteryFlow=flow}
+function energyText(){return`${Math.round(energyState.demand)} / ${Math.round(energyState.available)}`}
+function requestDispatch(bot,delay=.05){bot.nextDispatchAt=Math.max(bot.nextDispatchAt,simTime+delay);if(bot.queued)return;bot.queued=true;dispatcher.queue.push(bot);dispatcher.waitingCount++}
+function compactDispatchQueue(){if(dispatcher.head>128&&dispatcher.head>dispatcher.queue.length/2){dispatcher.queue=dispatcher.queue.slice(dispatcher.head);dispatcher.head=0}}
+function priorityOf(bot,mine){return state.transportPriorities[bot.type.id]?.[mine.index]??1}
+function mineWaitAge(m){return m.stockAgeSince?Math.max(0,simTime-m.stockAgeSince):0}
+function candidateRank(bot,m){const p=priorityOf(bot,m);if(p<=0)return 0;return mineWaitAge(m)>=STARVATION_SECONDS?3:p}
+function industrialRouteDistance(a,b){return a.distanceTo(b)}
+function findDispatchJob(bot){
+  let best=null;const cap=botCapacity(bot),v=botMaxSpeed(bot),a=botAcceleration(bot);
+  const consider=(job,rank,valuePerUnit,distance,units)=>{const cycle=estimateOneWay(distance,v,a)+totalLoadTime(bot,units)+totalUnloadTime(bot,units);const throughput=units*valuePerUnit/Math.max(.25,cycle);if(!best||rank>best.rank||(rank===best.rank&&throughput>best.throughput))best={...job,rank,throughput,oneWay:estimateOneWay(distance,v,a),units}};
+  // Produtos processados sempre avançam fisicamente: refinaria -> armazém -> exportação.
+  if(state.refinery.unlocked){for(const r of recipes){if(!compatible(bot.type,r.inputMine))continue;const out=refineryOutputAvailable(r.id),whRoom=warehouseCapacity()-mapTotal(warehouse.stock)-warehouse.inboundReserved;if(out>0&&whRoom>0){const units=Math.min(cap,out,whRoom);consider({kind:'product_to_warehouse',recipe:r,source:'refinery',destination:'warehouse'},4,processedUnitValue(r),industrialRouteDistance(refineryOutputPoint,warehousePoint),units)}const wa=warehouseAvailable(r.id);if(wa>0){const units=Math.min(cap,wa);consider({kind:'product_to_export',recipe:r,source:'warehouse',destination:'export'},5,processedUnitValue(r),industrialRouteDistance(warehousePoint,exportPoint),units)}}}
+  for(const m of mines){if(!m.unlocked||!compatible(bot.type,m.index))continue;const available=availableStock(m);if(available<=0)continue;const p=priorityOf(bot,m);if(p<=0)continue;const units=Math.min(cap,available),minUnits=Math.max(1,Math.ceil(cap*bot.type.dispatchFill));if(units<minUnits&&m.stock<capacity(m)&&mineWaitAge(m)<bot.type.partialWait)continue;const recipe=recipeByMine.get(m.index),wantsProcess=state.refinery.unlocked&&recipe&&state.refinery.recipeEnabled[recipe.id];if(wantsProcess){const room=refineryInputCapacity()-mapTotal(refinery.inputs)-refinery.inputReserved,nu=Math.min(units,Math.max(0,room));if(nu>0)consider({kind:'raw_to_refinery',mine:m,recipe,source:'mine',destination:'refinery'},candidateRank(bot,m)+1,valueOf(m)*recipe.valueMul,industrialRouteDistance(m.pickupPoint,refineryInputPoint),nu)}else consider({kind:'raw_to_export',mine:m,source:'mine',destination:'export'},candidateRank(bot,m),valueOf(m),m.routeDistance,units)}
+  return best
+}
+function reserveJob(bot,job){let units=job.units;if(units<=0)return false;const token=reservationSeq++,ttl=Math.max(14,job.oneWay*3+totalLoadTime(bot,units)+10);if(job.source==='mine'){units=Math.min(units,availableStock(job.mine));if(units<=0)return false;job.mine.reserved+=units;refreshAvailabilityAge(job.mine,simTime)}else if(job.source==='refinery'){units=Math.min(units,refineryOutputAvailable(job.recipe.id));if(units<=0)return false;mapAdd(refinery.outputReserved,job.recipe.id,units)}else if(job.source==='warehouse'){units=Math.min(units,warehouseAvailable(job.recipe.id));if(units<=0)return false;mapAdd(warehouse.reserved,job.recipe.id,units)}if(job.destination==='refinery')refinery.inputReserved+=units;if(job.destination==='warehouse')warehouse.inboundReserved+=units;bot.reservation={token,units,expiresAt:simTime+ttl,job};dispatcher.reservations.set(token,bot);bot.routeMine=job.mine||mines[job.recipe?.inputMine]||null;bot.goal.copy(job.source==='mine'?job.mine.pickupPoint:job.source==='refinery'?refineryOutputPoint:warehousePoint);bot.state='to_source';bot.currentSpeed=0;activeBots.add(bot);return true}
+function releaseReservation(bot){const r=bot.reservation;if(!r)return;const j=r.job;if(j.source==='mine'){j.mine.reserved=Math.max(0,j.mine.reserved-r.units);refreshAvailabilityAge(j.mine,simTime)}else if(j.source==='refinery')mapAdd(refinery.outputReserved,j.recipe.id,-r.units);else if(j.source==='warehouse')mapAdd(warehouse.reserved,j.recipe.id,-r.units);if(j.destination==='refinery')refinery.inputReserved=Math.max(0,refinery.inputReserved-r.units);if(j.destination==='warehouse')warehouse.inboundReserved=Math.max(0,warehouse.inboundReserved-r.units);dispatcher.reservations.delete(r.token);bot.reservation=null}
+function clearCargo(bot){bot.cargoUnits=0;bot.cargoValue=0;bot.cargoMineIndex=-1;bot.cargoKind='raw';bot.cargoProductId=null;bot.cargoDestination='export';setCargoVisual(bot,-1,0)}
+function cancelJob(bot){releaseReservation(bot);bot.routeMine=null;clearCargo(bot);bot.state='idle';bot.currentSpeed=0;activeBots.delete(bot);requestDispatch(bot,.15)}
+function sendHome(bot){if(bot.reservation||bot.cargoUnits>0)return;const dx=bot.spawn.x-bot.mesh.position.x,dz=bot.spawn.z-bot.mesh.position.z;if(dx*dx+dz*dz<1.2){bot.state='idle';bot.currentSpeed=0;activeBots.delete(bot);return}bot.goal.copy(bot.spawn);bot.state='home';activeBots.add(bot)}
+function sweepReservations(){for(const [token,bot] of dispatcher.reservations){const r=bot.reservation;if(!r||r.token!==token){dispatcher.reservations.delete(token);continue}if(simTime>r.expiresAt)cancelJob(bot)}}
+function vehicleName(bot){return`${bot.type.id==='rover'?'Rover':bot.type.id==='crawler'?'Crawler':'Skimmer'} ${String(bot.id+1).padStart(2,'0')}`}
+function flagMaintenance(bot){if(!bot.maintenanceDue)bot.maintenanceDue=true;if(!bot.maintenanceNotified){bot.maintenanceNotified=true;const msg=`⚠ ${vehicleName(bot)} precisa de manutenção.`;toast(msg);pushEventHistory(msg);renderEventFeed()}}
+function tryStartMaintenance(bot){if(!bot.maintenanceDue||bot.reservation||bot.cargoUnits>0)return false;if(workshop.activeBot&&workshop.activeBot!==bot)return false;workshop.activeBot=bot;bot.goal.copy(maintenancePoint);bot.state='to_maintenance';bot.currentSpeed=0;activeBots.add(bot);return true}
+function beginMaintenance(bot){bot.timer=bot.operationDuration=bot.type.id==='crawler'?10:bot.type.id==='skimmer'?7:8;bot.serviceFx=0;bot.state='maintenance';bot.currentSpeed=0;bot.moving=false;assignCrewToWorkshop()}
+function finishMaintenance(bot){bot.wear=.05;bot.maintenanceDue=false;bot.maintenanceNotified=false;bot.maintenanceCount++;workshop.completed++;workshop.activeBot=null;bot.state='idle';bot.currentSpeed=0;activeBots.delete(bot);pushEventHistory(`${vehicleName(bot)} voltou ao serviço após manutenção.`);renderEventFeed();requestDispatch(bot,.18)}
+function dispatchTick(){if(simTime>=dispatcher.nextSweep){dispatcher.nextSweep=simTime+1;sweepReservations()}const availableAtStart=dispatcher.queue.length-dispatcher.head,budget=Math.min(16,availableAtStart);for(let i=0;i<budget;i++){const bot=dispatcher.queue[dispatcher.head++];if(!bot||!bot.queued)continue;bot.queued=false;dispatcher.waitingCount=Math.max(0,dispatcher.waitingCount-1);if(bot.reservation||bot.cargoUnits>0)continue;if(simTime<bot.nextDispatchAt){requestDispatch(bot,bot.nextDispatchAt-simTime);continue}if(bot.maintenanceDue){if(tryStartMaintenance(bot))continue;if(bot.state!=='home')sendHome(bot);requestDispatch(bot,1.1);continue}const job=findDispatchJob(bot);if(job&&reserveJob(bot,job))continue;if(bot.state!=='home')sendHome(bot);requestDispatch(bot,.7)}compactDispatchQueue()}
+function updateDispatcher(dt){dispatcher.accum+=dt;if(dispatcher.accum<.28)return;dispatcher.accum%=.28;dispatchTick()}
+function angleLerp(a,b,t){let d=(b-a+Math.PI)%(Math.PI*2)-Math.PI;return a+d*t}
+function approach(v,target,delta){return v<target?Math.min(target,v+delta):Math.max(target,v-delta)}
+function moveVehicle(bot,target,dt){const p=bot.mesh.position,dx=target.x-p.x,dz=target.z-p.z,dist=Math.hypot(dx,dz);if(dist<.30){bot.currentSpeed=0;bot.moving=false;return true}const vmax=botMaxSpeed(bot),accel=botAcceleration(bot),brakeSpeed=Math.sqrt(Math.max(.04,2*accel*Math.max(0,dist-.18))),desired=Math.min(vmax,brakeSpeed);bot.currentSpeed=approach(bot.currentSpeed,desired,accel*dt);const step=Math.min(dist,Math.max(.02,bot.currentSpeed)*dt);p.x+=dx/dist*step;p.z+=dz/dist*step;bot.mesh.rotation.y=angleLerp(bot.mesh.rotation.y,Math.atan2(dx,dz),clamp(dt*(4.5+accel*.35),0,1));if(bot.state!=='to_maintenance'){bot.wear=clamp(bot.wear+step*.00055,0,1.08);if(bot.wear>=1)flagMaintenance(bot)}for(const w of bot.wheels)w.rotation.x-=step*2.2;bot.moving=true;bot.trackAccum+=step;bot.dustAccum+=step;if(bot.routeMine&&bot.type.wheels){const rr=routes[bot.routeMine.index];if(rr)rr.wear=clamp(rr.wear+step*.0005,0,1)}if(bot.type.wheels&&bot.trackAccum>=.62){bot.trackAccum%=.62;stampTrack(bot)}if(bot.type.wheels&&bot.dustAccum>=.46){bot.dustAccum%=.46;roverDust(bot,state.speed>=4?1.45:.75)}bot.bob+=step*2.25;bot.cabin.position.y=bot.cabinBaseY+Math.sin(bot.bob)*.022;return dist-step<.30}
+function beginLoading(bot){const r=bot.reservation;if(!r){cancelJob(bot);return}bot.timer=bot.operationDuration=totalLoadTime(bot,r.units);bot.state='loading';bot.currentSpeed=0}
+function finishLoading(bot){const r=bot.reservation;if(!r){cancelJob(bot);return}const j=r.job;let taken={units:0,total:0};if(j.source==='mine'){j.mine.reserved=Math.max(0,j.mine.reserved-r.units);taken=takeStock(j.mine,r.units,simTime);bot.cargoMineIndex=j.mine.index;bot.cargoKind='raw'}else if(j.source==='refinery'){mapAdd(refinery.outputReserved,j.recipe.id,-r.units);taken=takeProductLots(refinery.outputs,refinery.outputLots,j.recipe.id,r.units);bot.cargoMineIndex=j.recipe.inputMine;bot.cargoKind='processed';bot.cargoProductId=j.recipe.id}else{mapAdd(warehouse.reserved,j.recipe.id,-r.units);taken=takeProductLots(warehouse.stock,warehouse.lots,j.recipe.id,r.units);bot.cargoMineIndex=j.recipe.inputMine;bot.cargoKind='processed';bot.cargoProductId=j.recipe.id}dispatcher.reservations.delete(r.token);bot.reservation=null;if(taken.units<=0){bot.routeMine=null;bot.state='idle';activeBots.delete(bot);requestDispatch(bot,.15);return}bot.cargoUnits=taken.units;bot.cargoValue=taken.total;bot.cargoDestination=j.destination;setCargoVisual(bot,bot.cargoMineIndex,taken.units,bot.cargoProductId);bot.forks.position.y=.58;bot.goal.copy(j.destination==='refinery'?refineryInputPoint:j.destination==='warehouse'?warehousePoint:exportPoint);bot.state='to_destination';bot.currentSpeed=0}
+function beginUnloading(bot){bot.timer=bot.operationDuration=totalUnloadTime(bot,bot.cargoUnits);bot.state='unloading';bot.currentSpeed=0}
+function finishUnloading(bot){const units=bot.cargoUnits,total=bot.cargoValue,dest=bot.cargoDestination,productId=bot.cargoProductId,mineIndex=bot.cargoMineIndex;if(units>0&&dest==='refinery'){refinery.inputReserved=Math.max(0,refinery.inputReserved-units);mapAdd(refinery.inputs,mineIndex,units);puff(refineryInputPoint.clone().add(new THREE.Vector3(0,1,0)),defs[mineIndex].color,Math.min(4,units+1))}else if(units>0&&dest==='warehouse'){warehouse.inboundReserved=Math.max(0,warehouse.inboundReserved-units);mapAdd(warehouse.stock,productId,units);addProductLot(warehouse.lots,productId,units,total/units);const recipe=recipeById.get(productId);puff(warehousePoint.clone().add(new THREE.Vector3(0,1,0)),recipe.color,Math.min(4,units+1))}else if(units>0){const saleTotal=Math.round(total*(colonyModifiers.resourceValueMul[mineIndex]||1));state.money+=saleTotal;state.deliveries+=units;if(productId)state.processedExports+=units;recordIncome(saleTotal);baseMoneyPopup(`+ ${fmt(saleTotal)} • ${units} ${productId?'produto':'carga'}${units>1?'s':''}`);const color=productId?recipeById.get(productId)?.color:defs[mineIndex]?.color;puff(new THREE.Vector3(exportPoint.x,.6,exportPoint.z),color||0xffffff,Math.min(5,1+Math.ceil(units/3)))}bot.routeMine=null;bot.forks.position.y=.28;clearCargo(bot);bot.state='idle';bot.currentSpeed=0;activeBots.delete(bot);requestDispatch(bot,.06)}
+function updateActiveBot(bot,dt){if(bot.state==='to_source'){if(moveVehicle(bot,bot.goal,dt))beginLoading(bot)}else if(bot.state==='loading'){bot.timer-=dt;const k=1-clamp(bot.timer/Math.max(.001,bot.operationDuration),0,1);bot.forks.position.y=.28+k*.30;if(bot.timer<=0)finishLoading(bot)}else if(bot.state==='to_destination'){if(moveVehicle(bot,bot.goal,dt))beginUnloading(bot)}else if(bot.state==='unloading'){bot.timer-=dt;if(bot.timer<=0)finishUnloading(bot)}else if(bot.state==='to_maintenance'){if(moveVehicle(bot,bot.goal,dt))beginMaintenance(bot)}else if(bot.state==='maintenance'){bot.timer-=dt;bot.serviceFx-=dt;if(bot.serviceFx<=0){bot.serviceFx=.42+Math.random()*.28;puff(bot.mesh.position.clone().add(new THREE.Vector3(0,1.35,0)),0xffb45d,1)}if(bot.timer<=0)finishMaintenance(bot)}else if(bot.state==='home'){if(moveVehicle(bot,bot.goal,dt)){bot.state='idle';bot.currentSpeed=0;activeBots.delete(bot)}}else activeBots.delete(bot);bot.beacon.material.emissiveIntensity=(bot.state==='idle'?.45:bot.state==='maintenance'?3.4:2)*(1+nightFactor*.35);bot.headlight.material.emissiveIntensity=.35+nightFactor*(bot.moving?1.8:.8)}
+function updateSkimmers(t){for(const b of skimmerBots){b.mesh.position.y=b.hoverY+Math.sin(t*2.1+b.bob)*.10;b.mesh.rotation.z=Math.sin(t*1.4+b.bob)*.012}}
+function chooseRecipe(){for(const r of recipes){if(!state.refinery.recipeEnabled[r.id])continue;if(mapGet(refinery.inputs,r.inputMine)<=0)continue;if(mapTotal(refinery.outputs)>=refineryOutputCapacity())return null;return r}return null}
+function updateIndustry(step){if(!state.refinery.unlocked)return;if(refinery.active){refinery.active.remaining-=step*energyState.factor*colonyModifiers.refinerySpeedMul;if(refinery.active.remaining<=0){const r=recipeById.get(refinery.active.recipeId);mapAdd(refinery.outputs,r.id,1);addProductLot(refinery.outputLots,r.id,1,baseProcessedUnitValue(r));puff(refineryOutputPoint.clone().add(new THREE.Vector3(0,1,0)),r.color,3);refinery.active=null;for(const b of bots)if(b.state==='idle')requestDispatch(b,.03)}}if(!refinery.active){const r=chooseRecipe();if(r){mapAdd(refinery.inputs,r.inputMine,-1);const duration=refineryProcessTime(r);refinery.active={recipeId:r.id,remaining:duration,duration}}}updateIndustrialVisuals()}
+function updateIndustrialVisuals(){refineryGroup.visible=state.refinery.unlocked;industrialWarehouse.visible=state.refinery.unlocked;const inN=mapTotal(refinery.inputs),outN=mapTotal(refinery.outputs),whN=mapTotal(warehouse.stock);for(let i=0;i<refineryInputVisuals.length;i++)refineryInputVisuals[i].visible=state.refinery.unlocked&&i<Math.min(refineryInputVisuals.length,inN);for(let i=0;i<refineryOutputVisuals.length;i++)refineryOutputVisuals[i].visible=state.refinery.unlocked&&i<Math.min(refineryOutputVisuals.length,outN);for(let i=0;i<warehouseVisuals.length;i++)warehouseVisuals[i].visible=state.refinery.unlocked&&i<Math.min(warehouseVisuals.length,whN);refineryRing.material.emissiveIntensity=refinery.active?2.8:.45;refineryLamp.material.emissiveIntensity=refinery.active?3.2:.55;refineryCore.material.emissiveIntensity=refinery.active?1.1:.2;for(let i=0;i<solarVisuals.length;i++)solarVisuals[i].visible=i<state.power.solar;for(let i=0;i<generatorVisuals.length;i++)generatorVisuals[i].visible=i<state.power.generators;for(let i=0;i<batteryVisuals.length;i++)batteryVisuals[i].visible=i<state.power.batteries;reactorVisual.visible=state.power.reactor;for(const r of industrialRoutes){r.mesh.visible=state.refinery.unlocked;r.lamps.visible=state.refinery.unlocked&&(nightFactor>.35||r.wear>.02);r.mesh.material.opacity=state.refinery.unlocked?.28:0;for(const lm of r.lampMats)lm.emissiveIntensity=state.refinery.unlocked?nightFactor*1.15:0}}
+function updateWorkshopVisuals(t){const busy=!!workshop.activeBot;workshopServiceRing.material.emissiveIntensity=busy?2.4:.48;workshopLamp.material.emissiveIntensity=busy?3.0:.55;workshopServiceRing.rotation.z=t*(busy?1.6:.18);workshopArm.rotation.y=busy?Math.sin(t*1.8)*.34:Math.sin(t*.25)*.08;maintenanceRoute.lamps.visible=nightFactor>.35||busy;for(const lm of maintenanceRoute.lampMats)lm.emissiveIntensity=nightFactor*(busy?1.7:.65)}
+function updateMines(dt,t){for(const m of mines){if(!m.discovered)continue;m.drill.rotation.z+=dt*(m.unlocked?5+.25*m.prod:.3);if(m.evo&&m.evo.drill)m.evo.drill.rotation.z-=dt*(3.6+.2*m.prod);m.arm.rotation.y=Math.sin(t*1.7+m.index)*.12;m.lamp.material.emissiveIntensity=m.unlocked?(.85+nightFactor*1.45)+Math.sin(t*4+m.index)*.28:.12;if(m.unlocked&&particles.length<150&&Math.random()<dt*.18){const dp=m.def.pos.clone().add(new THREE.Vector3(-2.5*m.def.scale+.2,1.0,-.6*m.def.scale));puff(dp,m.def.color,1)}if(!m.unlocked)continue;const room=capacity(m)-m.stock;if(room<=0){m.blocked=true;continue}m.blocked=false;m.progress+=dt*energyState.factor/timeOf(m);const completed=Math.floor(m.progress);if(completed<=0)continue;const produced=Math.min(completed,room);if(produced>0){addStockLot(m,produced,Math.round(baseValueOf(m)*permanentResourceValueMul(m)),simTime);puff(m.pickupPoint.clone().add(new THREE.Vector3(0,1,0)),m.def.color,Math.min(4,produced+1))}if(produced>=room)m.progress=0;else m.progress-=produced}}
+
+const manage=$('#manage'),strip=$('#strip');let manageButtons=[];const stripCards=[];
+function postEconomyChange(){for(const m of mines){updateMineEvolution(m);updateStockVisual(m)}refreshTransportVisuals();updateBaseEvolution();updateCrewPopulation();updateIndustrialVisuals();updateEnergy(.01);updateManage();renderStrip();save()}
+function buyBtn(cost,action,unlock=false,label=null,forcedDisabled=false){const b=document.createElement('button');b.className='buy'+(unlock?' unlock':'')+(cost===Infinity?' maxed':'');b.textContent=label||(cost===Infinity?'MAX':fmt(cost));b.disabled=forcedDisabled||cost===Infinity||state.money<cost;manageButtons.push({b,cost,forcedDisabled});b.onclick=()=>{if(cost===Infinity||forcedDisabled)return;if(spend(cost)){action();postEconomyChange()}};return b}
+function appendUpgrade(holder,title,desc,cost,action){const r=document.createElement('div');r.className='upgrade';const tx=document.createElement('div');tx.innerHTML=`<div class="n">${title}</div><div class="d">${desc}</div>`;r.append(tx,buyBtn(cost,()=>{action();toast(`${title} melhorado`)}));holder.appendChild(r)}
+function priorityLabel(p){return p===2?'ALTA':p===1?'NORMAL':'IGNORAR'}function priorityClass(p){return p===2?'p2':p===0?'p0':''}
+function transportRequirement(typeId){if(typeId==='rover')return{ok:true,text:'Disponível desde a operação inicial.'};if(typeId==='crawler'){const ok=mines[1].unlocked&&state.deliveries>=15;if(ok)return{ok:true,text:'Logística pesada habilitada.'};if(!mines[1].discovered)return{ok:false,text:'Requer catalogar e colocar em operação um depósito metálico próximo.'};if(!mines[1].unlocked)return{ok:false,text:'Requer colocar o depósito de Ferro descoberto em operação.'};return{ok:false,text:`Requer 15 entregas para justificar logística pesada (${state.deliveries}/15).`}}const ok=state.tech.gravLattice&&mines[3].unlocked;if(ok)return{ok:true,text:'Malha gravitacional autenticada.'};if(!state.tech.gravLattice)return{ok:false,text:'Requer uma tecnologia alienígena de levitação ainda não catalogada.'};if(!mines[3].discovered)return{ok:false,text:'Requer catalogar um depósito raro compatível com a malha gravitacional.'};return{ok:false,text:'Requer colocar o depósito raro descoberto em operação antes de fabricar Skimmers.'}}
+function refineryRequirement(){const ok=mines[2].unlocked&&state.deliveries>=35;if(ok)return{ok:true,text:'Cadeia industrial disponível.'};if(!mines[2].discovered)return{ok:false,text:'Requer descobrir um depósito condutor intermediário antes de projetar a cadeia industrial.'};if(!mines[2].unlocked)return{ok:false,text:'Requer colocar o depósito de Cobre descoberto em operação.'};return{ok:false,text:`Requer 35 entregas para sustentar a cadeia industrial (${state.deliveries}/35).`}}
+function reactorRequirement(){const ok=state.tech.alienReactor&&state.processedExports>=45;if(ok)return{ok:true,text:'Tecnologia e maturidade industrial confirmadas.'};if(!state.tech.alienReactor)return{ok:false,text:'Requer uma descoberta tecnológica de energia alienígena.'};return{ok:false,text:`Núcleo alienígena compreendido; requer 45 exportações processadas para integração segura (${state.processedExports}/45).`}}
+let progressionGateSignature='';
+function refreshProgressionGates(){const key=[state.deliveries>=4,transportRequirement('crawler').ok,transportRequirement('skimmer').ok,refineryRequirement().ok,reactorRequirement().ok,state.refinery.unlocked,state.power.reactor].join('|');if(key===progressionGateSignature)return;progressionGateSignature=key;updateManage();}
+function allowedTransportNames(mineIndex){return Object.values(transportTypes).filter(t=>compatible(t,mineIndex)).map(t=>t.name)}
+function renderTabs(){const tabs=document.createElement('div');tabs.className='tabs';for(const [id,label] of [['mine','MINA'],['explore','EXPLORAR'],['fleet','FROTA'],['industry','INDÚSTRIA'],['power','ENERGIA'],['colony','COLÔNIA']]){const b=document.createElement('button');b.className='tab '+(state.manageTab===id?'active':'');b.textContent=label;b.onclick=()=>{state.manageTab=id;updateManage()};tabs.appendChild(b)}manage.appendChild(tabs)}
+function renderMineManage(m){
+ const head=document.createElement('div');head.className='sel';head.innerHTML=`<div><div class="title">${m.discovered?m.def.name:'Área não catalogada'}</div><div class="sub">${m.discovered?`${m.def.res} • ${Math.round(m.routeDistance)} u logísticas`:'Use o drone para revelar sinais.'}</div></div><div class="badge" id="mineBadge">${m.discovered?(m.unlocked?(m.blocked?'CHEIO':'ATIVO'):'DESCOBERTO'):'DESCONHECIDO'}</div>`;manage.appendChild(head);
+ if(!m.discovered){const p=document.createElement('div');p.className='statusLine';p.innerHTML='<b>Nenhuma telemetria mineral confiável.</b><br>Abra EXPLORAR e investigue sinais disponíveis.';manage.appendChild(p);return}
+ if(!m.unlocked){const p=document.createElement('div');p.className='statusLine';p.innerHTML=`<b>${m.def.res} confirmado.</b> O depósito foi encontrado, mas ainda não possui infraestrutura de extração.<br>Distância: <b>${Math.round(m.routeDistance)} u</b> • Compatíveis: <b>${allowedTransportNames(m.index).join(' / ')}</b>`;manage.appendChild(p);manage.appendChild(buyBtn(m.def.unlock,()=>{m.unlocked=true;refreshAvailabilityAge(m,simTime);toast(`Operação de ${m.def.res} estabelecida!`);focus(m);for(const b of bots)requestDispatch(b,.03)},true,'Instalar operação • '+fmt(m.def.unlock)));return}
+ const cap=capacity(m),names=allowedTransportNames(m.index),recipe=recipeByMine.get(m.index);const s=document.createElement('div');s.innerHTML=`<div class="infoRow"><span>Valor bruto</span><b>${fmt(valueOf(m))}</b></div><div class="infoRow"><span>Ciclo de extração</span><b>${timeOf(m).toFixed(1)}s</b></div><div class="infoRow"><span>Energia da mina</span><b>2,2</b></div><div class="infoRow"><span>Estoque local</span><b id="stockVal">${m.stock} / ${cap}</b></div><div class="infoRow"><span>Reservado</span><b id="reservedVal">${m.reserved}</b></div><div class="stockBar ${m.stock>=cap?'full':''}" id="stockBar"><i style="width:${clamp(m.stock/cap*100,0,100)}%"></i></div><div class="statusLine" id="mineStatus">${m.stock>=cap?'<b>Produção pausada:</b> estoque cheio.':'<b>Produção ativa.</b>'}<br>${recipe&&state.refinery.unlocked?`Receita disponível: <b>${recipe.name}</b>. Com processamento ligado, esta carga vai primeiro à refinaria.`:'Carga sem rota industrial ativa é enviada para exportação bruta.'}<br>Atendimento: <b>${names.join(' / ')}</b></div>`;manage.appendChild(s);const a=document.createElement('div');a.className='section';a.textContent='Infraestrutura da mina';manage.appendChild(a);appendUpgrade(manage,'Brocas autônomas',`Nv. ${m.prod}/${MINE_UPGRADE_MAX.prod} • 18% mais rápidas`,prodCost(m),()=>m.prod++);appendUpgrade(manage,'Análise mineral',`Nv. ${m.val}/${MINE_UPGRADE_MAX.val} • +27% no valor das novas unidades`,valCost(m),()=>m.val++);appendUpgrade(manage,'Estoque local',`Nv. ${m.store}/${MINE_UPGRADE_MAX.store} • +4 unidades de capacidade`,storeCost(m),()=>m.store++)
+}
+function renderExploreManage(){
+ const active=surveyRuntime.signal,head=document.createElement('div');head.className='sel';head.innerHTML=`<div><div class="title">Exploração planetária</div><div class="sub">Sinais desconhecidos • drone físico • descobertas permanentes</div></div><div class="badge">${completedDiscoveryCount()} catalogados</div>`;manage.appendChild(head);
+ if(!state.survey.droneUnlocked){const p=document.createElement('div');p.className='statusLine';p.innerHTML=`<b>Reconhecimento orbital incompleto.</b> A colônia precisa de um drone local para confirmar sinais sem revelar o mapa inteiro de graça.<br>${state.deliveries<4?`Complete 4 entregas para liberar a montagem (${state.deliveries}/4).`:'A plataforma de montagem está pronta.'}`;manage.appendChild(p);manage.appendChild(buyBtn(SURVEY_DRONE_COST,()=>{state.survey.droneUnlocked=true;surveyDrone.position.copy(surveyHome);updateSignalAvailability();toast('Drone de reconhecimento operacional.')},true,'Construir drone • '+fmt(SURVEY_DRONE_COST),state.deliveries<4));return}
+ const status=document.createElement('div');status.className='statusLine';status.innerHTML=active?`<b>${active.code}</b> • ${surveyRuntime.phase==='scan'?`escaneando ${Math.ceil(surveyRuntime.scanRemaining)}s`:(surveyRuntime.phase==='return'?'retornando à base':'em deslocamento')} • consumo temporário 3 energia`:`<b>Drone em patrulha.</b> ${nextSurveyHint()}`;manage.appendChild(status);
+ const up=document.createElement('div');up.className='section';up.textContent='Plataforma de reconhecimento';manage.appendChild(up);appendUpgrade(manage,'Propulsão do drone',`Nv. ${state.survey.flight}/3 • +20% velocidade de voo`,surveyUpgradeCost('flight'),()=>state.survey.flight++);appendUpgrade(manage,'Matriz de varredura',`Nv. ${state.survey.scan}/3 • -22% tempo de scan`,surveyUpgradeCost('scan'),()=>state.survey.scan++);
+ const sec=document.createElement('div');sec.className='section';sec.textContent='Sinais disponíveis';manage.appendChild(sec);let shown=0;for(const sig of signalDefs){if(!signalAvailable(sig)&&state.survey.activeSignal!==sig.id)continue;shown++;const card=document.createElement('div');card.className='signalCard';card.innerHTML=`<div class="fleetTop"><div><div class="signalCode">${sig.code}</div><b>${state.survey.activeSignal===sig.id?'Investigação em curso':'Assinatura desconhecida'}</b><small>${surveyDistance(sig)} u da base • scan ${surveyScanDuration(sig).toFixed(1)}s • resultado não identificado</small></div><span class="fleetCount">${state.survey.activeSignal===sig.id?'ATIVO':fmt(sig.scanCost)}</span></div>`;if(state.survey.activeSignal!==sig.id){const row=document.createElement('div');row.className='fleetBuy';const b=document.createElement('button');b.className='buy unlock';b.textContent=`ESCANEAR • ${fmt(sig.scanCost)}`;const forced=!!state.survey.activeSignal||surveyRuntime.phase!=='idle';b.disabled=state.money<sig.scanCost||forced;manageButtons.push({b,cost:sig.scanCost,forcedDisabled:forced});b.onclick=()=>beginSurvey(sig);row.appendChild(b);card.appendChild(row)}manage.appendChild(card)}if(!shown){const n=document.createElement('div');n.className='miniNote';n.textContent=nextSurveyHint();manage.appendChild(n)}
+ const tech=document.createElement('div');tech.className='section';tech.textContent='Descobertas tecnológicas';manage.appendChild(tech);const box=document.createElement('div');box.className='fleetCard';const keys=Object.keys(state.tech).filter(k=>state.tech[k]);box.innerHTML=keys.length?`<div class="techList">${keys.map(k=>`<span class="techChip">${techName(k)}</span>`).join('')}</div><div class="miniNote">Tecnologias são encontradas no planeta e aplicadas automaticamente; não existe uma árvore de pesquisa paralela.</div>`:'<div class="miniNote">Nenhuma tecnologia alienígena confirmada ainda.</div>';manage.appendChild(box)
+}
+function transportStatText(type,key){const u=tu(type.id);if(key==='speed')return`${(type.baseSpeed*Math.pow(1.12,u.speed)).toFixed(1)} u/s`;if(key==='acceleration')return`${(type.baseAcceleration*Math.pow(1.18,u.acceleration)).toFixed(1)} u/s²`;if(key==='capacity')return`${type.baseCapacity+type.capacityStep*u.capacity} un.`;if(key==='load')return`${(type.baseLoad*Math.pow(.82,u.load)).toFixed(2)}s/un.`;return`${(type.baseUnload*Math.pow(.82,u.unload)).toFixed(2)}s/un.`}
+function renderFleetManage(){const head=document.createElement('div');head.className='sel';head.innerHTML=`<div><div class="title">Frota planetária</div><div class="sub">${bots.length} / ${MAX_FLEET} veículos • despacho industrial</div></div><div class="badge">${dispatcher.waitingCount} aguardando</div>`;manage.appendChild(head);const note=document.createElement('div');note.className='statusLine';note.innerHTML='<b>Um único despachante:</b> a frota agora atende minas, refinaria, armazém e exportação. Produtos processados recebem prioridade de escoamento para impedir que a indústria trave por saída cheia.';manage.appendChild(note);for(const type of Object.values(transportTypes)){const u=tu(type.id),typeBots=bots.filter(b=>b.type.id===type.id),count=typeBots.length,due=typeBots.filter(b=>b.maintenanceDue).length,avgWear=count?typeBots.reduce((a,b)=>a+b.wear,0)/count:0,card=document.createElement('div');card.className='fleetCard';card.innerHTML=`<div class="fleetTop"><div><b>${type.name}</b><small>${type.desc}</small></div><span class="fleetCount ${due?'maintWarn':''}">${due?`${due} manutenção`:count+' em serviço'}</span></div><div class="fleetStats"><span>CAP ${botCapacity({type})}</span><span>VEL ${transportStatText(type,'speed')}</span><span>ACEL ${transportStatText(type,'acceleration')}</span><span>CARGA ${transportStatText(type,'load')}</span><span>DESC ${transportStatText(type,'unload')}</span><span>DESG ${Math.round(avgWear*100)}%</span></div><div class="compat"><b>Compatibilidade:</b> ${compatibilityText(type)} — produtos processados herdam a classe do minério de origem.</div>`;manage.appendChild(card);const cost=transportBuyCost(type.id),req=transportRequirement(type.id),buyRow=document.createElement('div');buyRow.className='fleetBuy';buyRow.appendChild(buyBtn(cost,()=>{const b=createBot(bots.length,type.id);refreshTransportVisuals(type.id);requestDispatch(b,.05);toast(`${type.name} adicionado à frota`)},false,req.ok?`+ veículo ${fmt(cost)}`:'TECNOLOGIA PENDENTE',bots.length>=MAX_FLEET||!req.ok));card.appendChild(buyRow);if(!req.ok){const rn=document.createElement('div');rn.className='miniNote exploreWarn';rn.textContent=req.text;card.appendChild(rn);continue}const holder=document.createElement('div');card.appendChild(holder);appendUpgrade(holder,'Velocidade',`Nv. ${u.speed}/${type.upgradeMax.speed} • +12% velocidade máxima`,transportUpgradeCost(type.id,'speed'),()=>u.speed++);appendUpgrade(holder,'Aceleração',`Nv. ${u.acceleration}/${type.upgradeMax.acceleration} • +18% aceleração`,transportUpgradeCost(type.id,'acceleration'),()=>u.acceleration++);appendUpgrade(holder,'Capacidade',`Nv. ${u.capacity}/${type.upgradeMax.capacity} • +${type.capacityStep} unidade${type.capacityStep>1?'s':''}`,transportUpgradeCost(type.id,'capacity'),()=>u.capacity++);appendUpgrade(holder,'Carga',`Nv. ${u.load}/${type.upgradeMax.load} • -18% tempo por unidade`,transportUpgradeCost(type.id,'load'),()=>u.load++);appendUpgrade(holder,'Descarga',`Nv. ${u.unload}/${type.upgradeMax.unload} • -18% tempo por unidade`,transportUpgradeCost(type.id,'unload'),()=>u.unload++);const details=document.createElement('details');details.className='priorityBox';const summary=document.createElement('summary');summary.textContent='Prioridades de recursos';details.appendChild(summary);const grid=document.createElement('div');grid.className='priorityGrid';for(let i=0;i<RESOURCE_COUNT;i++){if(!mines[i].discovered||!compatible(type,i))continue;const p=state.transportPriorities[type.id][i],b=document.createElement('button');b.className=`priorityBtn ${priorityClass(p)}`;b.textContent=`${defs[i].res}: ${priorityLabel(p)}`;b.onclick=()=>{const cur=state.transportPriorities[type.id][i];state.transportPriorities[type.id][i]=cur===1?2:cur===2?0:1;save();updateManage()};grid.appendChild(b)}details.appendChild(grid);card.appendChild(details)}}
+function renderIndustryManage(){const h=document.createElement('div');h.className='sel';h.innerHTML=`<div><div class="title">Complexo industrial</div><div class="sub">Refino físico • filas limitadas • valor agregado</div></div><div class="badge">${state.refinery.unlocked?'ONLINE':'PROJETO'}</div>`;manage.appendChild(h);if(!state.refinery.unlocked){const req=refineryRequirement(),p=document.createElement('div');p.className='statusLine';p.innerHTML=`<b>Refinaria orbital-terrestre:</b> inaugura a cadeia minério → processamento → armazém → exportação.<br>${req.text}`;manage.appendChild(p);manage.appendChild(buyBtn(28000,()=>{state.refinery.unlocked=true;toast('Refinaria inaugurada! Cadeia industrial online.');for(const b of bots)requestDispatch(b,.02)},true,'Construir • '+fmt(28000),!req.ok));return}const inCap=refineryInputCapacity(),outCap=refineryOutputCapacity(),whCap=warehouseCapacity(),active=refinery.active?recipeById.get(refinery.active.recipeId):null;const info=document.createElement('div');info.innerHTML=`<div class="infoRow"><span>Entrada bruta</span><b>${mapTotal(refinery.inputs)} / ${inCap}</b></div><div class="stockBar ${mapTotal(refinery.inputs)>=inCap?'full':''}"><i style="width:${clamp(mapTotal(refinery.inputs)/inCap*100,0,100)}%"></i></div><div class="infoRow"><span>Saída processada</span><b>${mapTotal(refinery.outputs)} / ${outCap}</b></div><div class="stockBar ${mapTotal(refinery.outputs)>=outCap?'full':''}"><i style="width:${clamp(mapTotal(refinery.outputs)/outCap*100,0,100)}%"></i></div><div class="infoRow"><span>Armazém industrial</span><b>${mapTotal(warehouse.stock)} / ${whCap}</b></div><div class="stockBar ${mapTotal(warehouse.stock)>=whCap?'full':''}"><i style="width:${clamp(mapTotal(warehouse.stock)/whCap*100,0,100)}%"></i></div><div class="statusLine">${active?`Processando <b>${active.inputName} → ${active.name}</b> • ${(Math.max(0,refinery.active.remaining)/Math.max(.01,colonyModifiers.refinerySpeedMul)).toFixed(1)}s restantes • rede ${(energyState.factor*100).toFixed(0)}%`:'<b>Refinaria aguardando.</b> Precisa de matéria-prima habilitada e espaço na saída.'}</div>`;manage.appendChild(info);const sec=document.createElement('div');sec.className='section';sec.textContent='Receitas';manage.appendChild(sec);for(const r of recipes){const mine=mines[r.inputMine];if(!mine.discovered)continue;const enabled=state.refinery.recipeEnabled[r.id],card=document.createElement('div');card.className='fleetCard';card.innerHTML=`<div class="fleetTop"><div><b>${r.inputName} → ${r.name}</b><small>${effectiveRefineryProcessTime(r).toFixed(1)}s efetivos • ${refineryEnergy(r).toFixed(0)} energia ativa • valor ${fmt(processedUnitValue(r))} (~${r.valueMul.toFixed(2)}× bruto)</small></div><span class="fleetCount">${enabled?'PROCESSAR':'VENDA BRUTA'}</span></div><div class="miniNote">Entrada aguardando: ${mapGet(refinery.inputs,r.inputMine)} • saída: ${mapGet(refinery.outputs,r.id)} • armazém: ${mapGet(warehouse.stock,r.id)}</div>`;const row=document.createElement('div');row.className='fleetBuy';const b=document.createElement('button');b.className='buy';b.textContent=enabled?'Enviar minério bruto direto para venda':'Ativar processamento desta receita';b.onclick=()=>{state.refinery.recipeEnabled[r.id]=!enabled;save();updateManage();for(const bot of bots)if(bot.state==='idle')requestDispatch(bot,.02)};row.appendChild(b);card.appendChild(row);manage.appendChild(card)}const sec2=document.createElement('div');sec2.className='section';sec2.textContent='Upgrades industriais';manage.appendChild(sec2);appendUpgrade(manage,'Velocidade de processo',`Nv. ${state.refinery.speed}/5 • -18% tempo por ciclo`,refineryUpgradeCost('speed'),()=>state.refinery.speed++);appendUpgrade(manage,'Buffer de entrada',`Nv. ${state.refinery.input}/5 • +6 cargas brutas`,refineryUpgradeCost('input'),()=>state.refinery.input++);appendUpgrade(manage,'Saída + armazém',`Nv. ${state.refinery.output}/5 • +6 saída e +10 armazém`,refineryUpgradeCost('output'),()=>state.refinery.output++);appendUpgrade(manage,'Eficiência energética',`Nv. ${state.refinery.efficiency}/5 • -12% consumo da refinaria`,refineryUpgradeCost('efficiency'),()=>state.refinery.efficiency++)}
+function renderPowerManage(){const h=document.createElement('div');h.className='sel';h.innerHTML=`<div><div class="title">Rede de energia</div><div class="sub">Produção simples + bateria • sem microgerenciamento</div></div><div class="badge">${Math.round(energyState.factor*100)}% VELOCIDADE</div>`;manage.appendChild(h);const max=batteryMax(),p=document.createElement('div');p.innerHTML=`<div class="infoRow"><span>Demanda atual</span><b>${energyState.demand.toFixed(1)}</b></div><div class="infoRow"><span>Geração instantânea</span><b>${energyState.generation.toFixed(1)}</b></div><div class="infoRow"><span>Potência disponível</span><b>${energyState.available.toFixed(1)}</b></div><div class="infoRow"><span>Bateria</span><b>${state.power.batteryCharge.toFixed(0)} / ${max}</b></div><div class="stockBar"><i style="width:${max?clamp(state.power.batteryCharge/max*100,0,100):0}%"></i></div><div class="statusLine">${energyState.factor<.999?`<b>Déficit:</b> minas e refinaria operam a ${(energyState.factor*100).toFixed(0)}% da velocidade. Veículos continuam normais.`:'<b>Rede estável.</b> Excedente carrega as baterias automaticamente.'}<br>Painéis variam com dia/noite; geradores e reator são constantes.</div>`;manage.appendChild(p);const sec=document.createElement('div');sec.className='section';sec.textContent='Fontes e armazenamento';manage.appendChild(sec);const reactorName=state.tech.alienReactor?'Reator alienígena':'Projeto energético desconhecido';const items=[['Painel solar',`+12 pico por unidade • produção atual ${solarPower().toFixed(1)}`,powerCost('solar'),()=>state.power.solar++,state.power.solar>=8],['Gerador compacto','+42 energia constante',powerCost('generator'),()=>state.power.generators++,state.power.generators>=4],['Bateria de fluxo','+55 armazenamento • descarga máx. +18',powerCost('battery'),()=>{state.power.batteries++;state.power.batteryCharge=Math.min(batteryMax(),state.power.batteryCharge+25)},state.power.batteries>=6],[reactorName,`${state.tech.alienReactor?'+220 energia constante • ':''}${reactorRequirement().text}`,state.power.reactor?Infinity:powerCost('reactor'),()=>{state.power.reactor=true;toast('Reator alienígena sincronizado!')},state.power.reactor||!reactorRequirement().ok]];for(const [n,d,cost,act,disabled] of items){const r=document.createElement('div');r.className='upgrade';const tx=document.createElement('div');tx.innerHTML=`<div class="n">${n}</div><div class="d">${d}</div>`;r.append(tx,buyBtn(cost,act,n===reactorName,null,disabled));manage.appendChild(r)}}
+function renderColonyManage(){const h=document.createElement('div');h.className='sel';h.innerHTML=`<div><div class="title">Vida da colônia</div><div class="sub">Tripulação decorativa • oficina automática • acontecimentos</div></div><div class="badge">${activeCrewCount()} astronautas</div>`;manage.appendChild(h);const due=bots.filter(b=>b.maintenanceDue).length,busy=workshop.activeBot;const summary=document.createElement('div');summary.innerHTML=`<div class="infoRow"><span>Tripulação visível</span><b>${activeCrewCount()} / ${crewPopulationTarget()}</b></div><div class="infoRow"><span>Oficina</span><b>${busy?vehicleName(busy)+' em serviço':'DISPONÍVEL'}</b></div><div class="infoRow"><span>Veículos aguardando manutenção</span><b class="${due?'maintWarn':''}">${due}</b></div><div class="infoRow"><span>Manutenções concluídas</span><b>${workshop.completed}</b></div><div class="infoRow"><span>Descobertas catalogadas</span><b>${completedDiscoveryCount()}</b></div><div class="infoRow"><span>Tecnologias alienígenas</span><b>${Object.values(state.tech).filter(Boolean).length}</b></div><div class="statusLine"><b>Sem microgerenciamento:</b> astronautas escolhem pontos simples e veículos procuram a oficina sozinhos após desgaste alto. A manutenção não interrompe cargas já em trânsito.</div>`;manage.appendChild(summary);const ev=document.createElement('div');ev.className='section';ev.textContent='Acontecimento atual';manage.appendChild(ev);const ec=document.createElement('div');ec.className='fleetCard';if(eventManager.active){const a=eventManager.active;ec.innerHTML=`<div class="fleetTop"><div><b>${a.def.title(a.ctx)}</b><small>${a.def.text(a.ctx)}</small></div><span class="fleetCount">${Math.ceil(a.remaining)}s</span></div>`}else ec.innerHTML='<div class="fleetTop"><div><b>Rotina operacional</b><small>Nenhum modificador temporário ativo.</small></div><span class="fleetCount">ESTÁVEL</span></div>';manage.appendChild(ec);const sec=document.createElement('div');sec.className='section';sec.textContent='Frota e desgaste';manage.appendChild(sec);const watched=bots.filter(b=>b.maintenanceDue||b.wear>.6).sort((a,b)=>b.wear-a.wear).slice(0,6);if(!watched.length){const n=document.createElement('div');n.className='miniNote';n.textContent='Nenhum veículo próximo da janela de manutenção.';manage.appendChild(n)}else for(const b of watched){const c=document.createElement('div');c.className='fleetCard';c.innerHTML=`<div class="fleetTop"><div><b>${vehicleName(b)}</b><small>${b.maintenanceDue?'Manutenção solicitada; terminará a tarefa atual e irá à oficina.':'Desgaste elevado, ainda operando normalmente.'}</small></div><span class="fleetCount ${b.maintenanceDue?'maintWarn':''}">${Math.round(b.wear*100)}%</span></div>`;manage.appendChild(c)}}
+function updateManage(){manageButtons=[];manage.innerHTML='';renderTabs();const m=mines[state.selected];if(state.manageTab==='mine')renderMineManage(m);else if(state.manageTab==='explore')renderExploreManage();else if(state.manageTab==='fleet')renderFleetManage();else if(state.manageTab==='industry')renderIndustryManage();else if(state.manageTab==='power')renderPowerManage();else renderColonyManage();const reset=document.createElement('button');reset.id='reset';reset.textContent='Reiniciar colônia';reset.onclick=()=>{if(confirm('Apagar o progresso?')){localStorage.removeItem('outpost7_save');location.reload()}};manage.appendChild(reset)}
+function refreshManage(){for(const x of manageButtons)x.b.disabled=x.forcedDisabled||x.cost===Infinity||state.money<x.cost;if(state.manageTab!=='mine')return;const m=mines[state.selected],cap=capacity(m);const a=$('#stockVal'),r=$('#reservedVal'),badge=$('#mineBadge'),bar=$('#stockBar');if(a)a.textContent=`${m.stock} / ${cap}`;if(r)r.textContent=m.reserved;if(badge&&m.unlocked)badge.textContent=m.stock>=cap?'CHEIO':'ATIVO';if(bar){bar.classList.toggle('full',m.stock>=cap);const fill=bar.querySelector('i');if(fill)fill.style.width=clamp(m.stock/cap*100,0,100)+'%'}}
+function renderStrip(){if(stripCards.length===0){mines.forEach((m,i)=>{const c=document.createElement('div');c.className='card';c.innerHTML=`<div class="topline"><span class="cr"></span><span class="cv"></span></div><div class="sub cs"></div><div class="bar"><i></i></div>`;c.onclick=()=>{state.selected=i;state.manageTab='mine';updateManage();renderStrip();focus(m)};strip.appendChild(c);stripCards.push({c,res:c.querySelector('.cr'),val:c.querySelector('.cv'),sub:c.querySelector('.cs'),fill:c.querySelector('.bar i')})})}mines.forEach((m,i)=>{const x=stripCards[i],cap=capacity(m),recipe=recipeByMine.get(i);x.c.style.display=m.discovered?'block':'none';if(!m.discovered)return;x.c.className='card '+(i===state.selected?'selected ':'')+(m.unlocked?'':'locked');x.res.textContent=m.def.res;x.val.textContent=m.unlocked?fmt(valueOf(m)):fmt(m.def.unlock);x.sub.textContent=m.unlocked?`${m.stock}/${cap} • ${recipe&&state.refinery.unlocked&&state.refinery.recipeEnabled[recipe.id]?'→ REFINARIA':'→ EXPORTAR'}`:`DESCOBERTO • instalar operação`;x.fill.style.width=(m.unlocked?m.progress*100:0)+'%'})}
+function objective(){const o=$('#objective');if(state.deliveries===0){o.innerHTML='Extraia, armazene e entregue a primeira unidade de <strong>Basalto</strong>.';return}if(!state.survey.droneUnlocked){o.innerHTML='A operação inicial funciona. Faça algumas entregas e monte o <strong>drone de reconhecimento</strong> para descobrir o que existe além da base.';return}if(!mines[1].discovered){o.innerHTML='Há um eco próximo. Abra <strong>EXPLORAR</strong> e envie o drone ao primeiro sinal desconhecido.';return}if(!mines[2].unlocked){o.innerHTML='Expanda com cuidado: descubra e estabeleça novas operações. Distância começa a transformar <strong>transporte em gargalo real</strong>.';return}if(!state.refinery.unlocked){const req=refineryRequirement();o.innerHTML=req.ok?`A cadeia industrial está pronta para ser construída por <strong>${fmt(28000)}</strong>.`:`Expansão logística em curso. <strong>${req.text}</strong>`;return}if(state.processedExports===0){o.innerHTML='A refinaria está pronta. Faça <strong>uma cadeia completa: minério → refinaria → armazém → exportação</strong>.';return}if(!state.tech.alienReactor){o.innerHTML='A indústria revelou assinaturas mais estranhas. Continue explorando até encontrar <strong>tecnologia alienígena de energia</strong>.';return}if(!state.power.reactor){o.innerHTML=`Tecnologia alienígena conhecida. <strong>${reactorRequirement().text}</strong>`;return}if(!mines[7].discovered){o.innerHTML='A colônia avançada combina indústria e exploração. Continue expandindo até localizar os <strong>depósitos mais distantes</strong>.';return}o.innerHTML='Colônia madura: equilibre <strong>extração, descoberta, frota, buffers, processamento, energia e manutenção</strong> enquanto observa o planeta contar sua história.'}
+function hud(){const md=$('#memDiag'),totalStock=mines.reduce((a,m)=>a+m.stock,0),totalReserved=mines.reduce((a,m)=>a+m.reserved,0),surveyHud=$('#surveyHud');if(surveyHud)surveyHud.textContent=!state.survey.droneUnlocked?'OFFLINE':state.survey.activeSignal?'SCAN':`${availableSignalCount()} SINAL${availableSignalCount()===1?'':'S'}`;if(md){const due=bots.reduce((n,b)=>n+(b.maintenanceDue?1:0),0);md.textContent=` • GPU geo ${renderer.info.memory.geometries} / tex ${renderer.info.memory.textures} • partículas ${particles.length} • tripulação ${activeCrewCount()} • manutenção ${due} • bruto ${totalStock} • proc ${mapTotal(refinery.outputs)+mapTotal(warehouse.stock)} • sinais ${availableSignalCount()} • fila ${dispatcher.waitingCount}`}$('#money').textContent=fmt(state.money);$('#deliveries').textContent=state.deliveries.toLocaleString('pt-BR');const e=$('#energy'),card=e?.closest('.energyStat');if(e)e.textContent=energyText();if(card){card.classList.toggle('warn',energyState.factor<.999&&energyState.factor>=.65);card.classList.toggle('critical',energyState.factor<.65)}const now=performance.now();while(incomeEvents.length&&now-incomeEvents[0].t>60000)incomeEvents.shift();$('#income').textContent=fmt(incomeEvents.reduce((a,x)=>a+x.v,0));objective()}
+
+const labelProjection=new THREE.Vector3();
+function labelsPositionUpdate(){
+  for(const m of mines){if(!m.discovered){m.label.style.display='none';continue}labelProjection.copy(m.labelAnchor).project(camera);m.label.style.display=labelProjection.z<1?'block':'none';m.label.style.left=(labelProjection.x*.5+.5)*innerWidth+'px';m.label.style.top=(-labelProjection.y*.5+.5)*innerHeight+'px'}
+  for(const sig of signalDefs){if(!sig.shouldShow){sig.label.style.display='none';continue}labelProjection.copy(sig.labelAnchor).project(camera);sig.label.style.display=labelProjection.z<1?'block':'none';sig.label.style.left=(labelProjection.x*.5+.5)*innerWidth+'px';sig.label.style.top=(-labelProjection.y*.5+.5)*innerHeight+'px'}
+}
+function labelsContentUpdate(){
+  for(const m of mines){if(!m.discovered)continue;m.label.classList.toggle('locked',!m.unlocked);const txt=m.unlocked?`<b>${m.def.name}</b><br>${m.stock}/${capacity(m)} estoque${m.reserved?` • ${m.reserved} reservado`:''}`:`<b>◈ ${m.def.name}</b><br>DESCOBERTO • operação ${fmt(m.def.unlock)}`;if(txt!==m._labelText){m._labelText=txt;m.label.innerHTML=txt}}
+}
+
+let yaw=.76,pitch=.57,dist=64,target=new THREE.Vector3(0,1.5,0),drag=false,lx=0,ly=0,moved=0,cameraCue=null;
+renderer.domElement.addEventListener('pointerdown',e=>{cameraCue=null;drag=true;lx=e.clientX;ly=e.clientY;moved=0;renderer.domElement.setPointerCapture(e.pointerId)});
+renderer.domElement.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-lx,dy=e.clientY-ly;moved+=Math.abs(dx)+Math.abs(dy);yaw-=dx*.006;pitch=clamp(pitch+dy*.006,.18,1.18);lx=e.clientX;ly=e.clientY});
+renderer.domElement.addEventListener('pointerup',e=>{drag=false;if(moved<8)pick(e.clientX,e.clientY)});
+renderer.domElement.addEventListener('wheel',e=>{dist=clamp(dist+e.deltaY*.038,26,112)},{passive:true});
+function cameraUpdate(raw=0){if(cameraCue&&!drag){const k=1-Math.exp(-raw*1.15);target.x=lerp(target.x,cameraCue.x,k);target.z=lerp(target.z,cameraCue.z,k);cameraCue.remaining-=raw;if(cameraCue.remaining<=0)cameraCue=null}camera.position.set(target.x+Math.sin(yaw)*Math.cos(pitch)*dist,target.y+Math.sin(pitch)*dist,target.z+Math.cos(yaw)*Math.cos(pitch)*dist);camera.lookAt(target)}
+function cueCamera(pos){cameraCue={x:pos.x,z:pos.z,remaining:3.2};dist=Math.min(dist,58)}
+function focus(m){target.x=lerp(target.x,m.def.pos.x,.68);target.z=lerp(target.z,m.def.pos.z,.68);dist=Math.min(dist,48)}
+const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
+function pick(x,y){pointer.x=x/innerWidth*2-1;pointer.y=-(y/innerHeight)*2+1;ray.setFromCamera(pointer,camera);for(const sig of signalDefs){if(sig.group.visible&&ray.intersectObject(sig.group,true).length){state.manageTab='explore';updateManage();return}}let found=-1;mines.forEach((m,i)=>{if(m.discovered&&ray.intersectObject(m.group,true).length)found=i});if(found>=0){state.selected=found;state.manageTab='mine';updateManage()}}
+
+function sanitizeLots(m,rawLots,rawStock){m.lots=[];m.stock=0;const cap=capacity(m);if(Array.isArray(rawLots)){for(const lot of rawLots){const units=Math.max(0,Math.floor(Number(lot?.units)||0)),val=Math.max(0,Math.floor(Number(lot?.value)||0));if(!units||!val)continue;const room=cap-m.stock;if(room<=0)break;const n=Math.min(room,units);m.lots.push({units:n,value:val});m.stock+=n}}if(m.stock===0&&Number(rawStock)>0){const n=Math.min(cap,Math.max(0,Math.floor(Number(rawStock)||0)));if(n){m.stock=n;m.lots=[{units:n,value:baseValueOf(m)}]}}m.reserved=0;refreshAvailabilityAge(m,simTime);updateStockVisual(m)}
+function mapToObject(map){return Object.fromEntries(map.entries())}function lotsToObject(map){return Object.fromEntries([...map.entries()].map(([k,v])=>[k,v]))}
+function save(){localStorage.setItem('outpost7_save',JSON.stringify({version:5,state:{money:state.money,deliveries:state.deliveries,processedExports:state.processedExports,transportUpgrades:state.transportUpgrades,transportPriorities:state.transportPriorities,refinery:state.refinery,power:state.power,survey:state.survey,tech:state.tech},industry:{inputs:mapToObject(refinery.inputs),outputs:mapToObject(refinery.outputs),outputLots:lotsToObject(refinery.outputLots),active:refinery.active,warehouseStock:mapToObject(warehouse.stock),warehouseLots:lotsToObject(warehouse.lots)},mines:mines.map(m=>({discovered:m.discovered,unlocked:m.unlocked,prod:m.prod,val:m.val,store:m.store,progress:m.progress,stock:m.stock,lots:m.lots})),botData:bots.map(b=>({type:b.type.id,wear:b.wear,maintenanceCount:b.maintenanceCount,x:Number(b.mesh.position.x.toFixed(3)),z:Number(b.mesh.position.z.toFixed(3)),cargo:b.cargoUnits>0?{units:b.cargoUnits,value:b.cargoValue,mineIndex:b.cargoMineIndex,kind:b.cargoKind,productId:b.cargoProductId,destination:b.cargoDestination}:null})),workshopCompleted:workshop.completed,worldClock,routeWear:routes.map(r=>r.wear)}))}
+function normalizeUpgrades(typeId,raw){const old=raw||{},u=blankUpgrades(),mx=transportTypes[typeId].upgradeMax;u.speed=clamp(Math.floor(Number(old.speed)||0),0,mx.speed);u.acceleration=clamp(Math.floor(Number(old.acceleration)||0),0,mx.acceleration);u.capacity=clamp(Math.floor(Number(old.capacity)||0),0,mx.capacity);const legacy=Math.max(0,Math.floor(Number(old.handling)||0));u.load=clamp(Math.floor(Number(old.load??legacy)||0),0,mx.load);u.unload=clamp(Math.floor(Number(old.unload??legacy)||0),0,mx.unload);return u}
+function normalizePriorities(typeId,raw){const p=defaultPriorities(typeId);if(Array.isArray(raw))for(let i=0;i<RESOURCE_COUNT;i++)if([0,1,2].includes(Number(raw[i])))p[i]=Number(raw[i]);for(let i=0;i<RESOURCE_COUNT;i++)if(!compatible(transportTypes[typeId],i))p[i]=0;return p}
+function restoreMap(map,obj,validKeys=null,numericKeys=false){map.clear();if(!obj||typeof obj!=='object')return;for(const [k,v] of Object.entries(obj)){if(validKeys&&!validKeys.has(k))continue;const n=Math.max(0,Math.floor(Number(v)||0));if(n)map.set(numericKeys?Number(k):k,n)}}
+function restoreLots(map,obj,validKeys){map.clear();if(!obj||typeof obj!=='object')return;for(const [k,arr] of Object.entries(obj)){if(validKeys&&!validKeys.has(k)||!Array.isArray(arr))continue;const clean=[];for(const lot of arr){if(clean.length>=64)break;const units=Math.max(0,Math.floor(Number(lot?.units)||0)),value=Math.max(0,Number(lot?.value)||0);if(units&&value)clean.push({units,value})}if(clean.length)map.set(k,clean)}}
+function load(){
+ let d=null;try{d=JSON.parse(localStorage.getItem('outpost7_save')||'null')}catch(e){console.warn('Save parse failed',e)}
+ if(d?.state){
+  state.money=Math.max(0,Number(d.state.money)||0);state.deliveries=Math.max(0,Math.floor(Number(d.state.deliveries)||0));state.processedExports=Math.max(0,Math.floor(Number(d.state.processedExports)||0));
+  const rawUp=d.state.transportUpgrades||{};for(const id of Object.keys(transportTypes))state.transportUpgrades[id]=normalizeUpgrades(id,rawUp[id]);
+  const rawP=d.state.transportPriorities||{};for(const id of Object.keys(transportTypes))state.transportPriorities[id]=normalizePriorities(id,rawP[id]);
+  if(d.state.refinery){const r=d.state.refinery;state.refinery.unlocked=!!r.unlocked;for(const k of ['speed','input','output','efficiency'])state.refinery[k]=clamp(Math.floor(Number(r[k])||0),0,5);for(const rc of recipes)if(typeof r.recipeEnabled?.[rc.id]==='boolean')state.refinery.recipeEnabled[rc.id]=r.recipeEnabled[rc.id]}
+  if(d.state.power){const p=d.state.power;state.power.solar=clamp(Math.floor(Number(p.solar)||2),2,8);state.power.generators=clamp(Math.floor(Number(p.generators)||0),0,4);state.power.batteries=clamp(Math.floor(Number(p.batteries)||0),0,6);state.power.reactor=!!p.reactor;state.power.batteryCharge=Math.max(0,Number(p.batteryCharge)||0)}if(d.state.tech&&typeof d.state.tech==='object')for(const k of Object.keys(state.tech))state.tech[k]=!!d.state.tech[k];if(d.state.survey&&typeof d.state.survey==='object'){const q=d.state.survey;state.survey.droneUnlocked=!!q.droneUnlocked;state.survey.flight=clamp(Math.floor(Number(q.flight)||0),0,3);state.survey.scan=clamp(Math.floor(Number(q.scan)||0),0,3);state.survey.completed=Array.isArray(q.completed)?[...new Set(q.completed.filter(id=>signalIds.has(id)))].slice(0,signalDefs.length):[];state.survey.seen=Array.isArray(q.seen)?[...new Set(q.seen.filter(id=>signalIds.has(id)))].slice(0,signalDefs.length):[];state.survey.activeSignal=signalIds.has(q.activeSignal)?q.activeSignal:null}
+ }
+ (d?.mines||[]).forEach((x,i)=>{const m=mines[i];if(!m)return;m.unlocked=!!x.unlocked||i===0;m.discovered=!!x.discovered||m.unlocked||i===0;m.prod=clamp(Math.floor(Number(x.prod)||0),0,MINE_UPGRADE_MAX.prod);m.val=clamp(Math.floor(Number(x.val)||0),0,MINE_UPGRADE_MAX.val);m.store=clamp(Math.floor(Number(x.store)||0),0,MINE_UPGRADE_MAX.store);m.progress=clamp(Number(x.progress)||0,0,.999);sanitizeLots(m,x.lots,x.stock)});
+ for(let i=0;i<mines.length;i++){const m=mines[i];if(!(d?.mines||[])[i])sanitizeLots(m,null,0)}
+ const productKeys=new Set(recipes.map(r=>r.id));
+ if(d?.industry&&state.refinery.unlocked){restoreMap(refinery.inputs,d.industry.inputs,new Set(recipes.map(r=>String(r.inputMine))),true);restoreMap(refinery.outputs,d.industry.outputs,productKeys);restoreLots(refinery.outputLots,d.industry.outputLots,productKeys);restoreMap(warehouse.stock,d.industry.warehouseStock,productKeys);restoreLots(warehouse.lots,d.industry.warehouseLots,productKeys);const a=d.industry.active;if(a&&recipeById.has(a.recipeId)){const r=recipeById.get(a.recipeId),dur=refineryProcessTime(r);refinery.active={recipeId:r.id,duration:dur,remaining:clamp(Number(a.remaining)||dur,0,dur)}}}
+ const restored=Array.isArray(d?.botData)&&d.botData.length?d.botData.slice(0,MAX_FLEET):null;
+ if(restored){for(let i=0;i<restored.length;i++){const x=restored[i]||{},b=createBot(i,transportTypes[x.type]?x.type:'rover');b.wear=clamp(Number(x.wear)||0,0,1.08);b.maintenanceCount=Math.max(0,Math.floor(Number(x.maintenanceCount)||0));b.maintenanceDue=b.wear>=1;const px=Number(x.x),pz=Number(x.z);if(Number.isFinite(px)&&Number.isFinite(pz)&&Math.hypot(px,pz)<96)b.mesh.position.set(px,b.hoverY,pz);const c=x.cargo;if(c&&Number(c.units)>0){let units=Math.min(botCapacity(b),Math.max(1,Math.floor(Number(c.units)||0))),mineIndex=clamp(Math.floor(Number(c.mineIndex)||0),0,RESOURCE_COUNT-1),kind=c.kind==='processed'?'processed':'raw',productId=kind==='processed'&&recipeById.has(c.productId)?c.productId:null,destination=['refinery','warehouse','export'].includes(c.destination)?c.destination:'export';if(kind==='processed'&&!productId){kind='raw';destination='export'}if(destination==='refinery'&&kind!=='raw')destination='export';if(destination==='warehouse'&&kind!=='processed')destination='export';if(destination==='refinery'){const room=Math.max(0,refineryInputCapacity()-mapTotal(refinery.inputs)-refinery.inputReserved);if(room<=0)destination='export';else units=Math.min(units,room)}if(destination==='warehouse'){const room=Math.max(0,warehouseCapacity()-mapTotal(warehouse.stock)-warehouse.inboundReserved);if(room<=0)destination='export';else units=Math.min(units,room)}if(units>0){const recipe=productId?recipeById.get(productId):null,baseFallback=recipe?processedUnitValue(recipe):valueOf(mines[mineIndex]);b.cargoUnits=units;b.cargoValue=Math.max(1,Number(c.value)||units*baseFallback);b.cargoMineIndex=mineIndex;b.cargoKind=kind;b.cargoProductId=productId;b.cargoDestination=destination;b.routeMine=mines[mineIndex];setCargoVisual(b,mineIndex,units,productId);b.forks.position.y=.58;if(destination==='refinery')refinery.inputReserved+=units;if(destination==='warehouse')warehouse.inboundReserved+=units;b.goal.copy(destination==='refinery'?refineryInputPoint:destination==='warehouse'?warehousePoint:exportPoint);b.state='to_destination';b.currentSpeed=0;activeBots.add(b)}}}}
+ else{const types=Array.isArray(d?.botTypes)&&d.botTypes.length?d.botTypes.slice(0,MAX_FLEET):null;if(types){for(let i=0;i<types.length;i++)createBot(i,transportTypes[types[i]]?types[i]:'rover')}else{const count=clamp(Math.floor(Number(d?.bots)||1),1,MAX_FLEET);for(let i=0;i<count;i++)createBot(i,'rover')}}
+ if(!bots.length)createBot(0,'rover');if(bots.some(b=>b.type.id==='skimmer'))state.tech.gravLattice=true;if(state.power.reactor)state.tech.alienReactor=true;for(const sig of signalDefs){if(state.survey.completed.includes(sig.id))applyDiscoveryUnlock(sig,false)}workshop.completed=Math.max(0,Math.floor(Number(d?.workshopCompleted)||0));if(Number.isFinite(d?.worldClock))worldClock=d.worldClock;if(Array.isArray(d?.routeWear))d.routeWear.forEach((v,i)=>{if(routes[i])routes[i].wear=clamp(Number(v)||0,0,1)});state.power.batteryCharge=Math.min(batteryMax(),state.power.batteryCharge)
+}
+
+function updateRouteVisuals(){routes.forEach((r,i)=>{const active=mines[i].discovered&&mines[i].unlocked,w=clamp(r.wear,0,1);r.mesh.visible=active;r.mesh.material.opacity=active?(.12+w*.42):0;r.lamps.visible=active&&(w>.02||nightFactor>.45);for(const lm of r.lampMats){lm.opacity=active?(.10+w*.58):0;lm.emissiveIntensity=active?nightFactor*(.35+w*1.5):0}})}
+
+load();
+for(const m of mines){updateMineEvolution(m);updateStockVisual(m)}
+refreshTransportVisuals();updateBaseEvolution();updateCrewPopulation();updateRouteVisuals();updateIndustrialVisuals();updateWorkshopVisuals(0);restoreSurveyRuntimeAfterLoad();updateSignalAvailability();updateSignalVisuals(0);updateEnergy(.01);renderEventFeed();
+for(const b of bots){if(b.maintenanceDue)flagMaintenance(b);if(b.cargoUnits>0){activeBots.add(b);continue}requestDispatch(b,.03+(b.id%8)*.03)}
+document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>{state.speed=Number(b.dataset.s);document.querySelectorAll('#speed button').forEach(x=>x.classList.toggle('active',x===b))});
+
+let last=performance.now(),ui=.2,sv=0,visualTick=0,signalVisualTick=.1,labelTick=.2,labelPosTick=.05,crewSafetyAccum=0,eventAccum=0,crewPopulationAccum=0,surveyAvailabilityAccum=0;
+function loop(now){
+  requestAnimationFrame(loop);const raw=Math.min((now-last)/1000,.05);last=now;const dt=raw*state.speed,t=now/1000;cameraUpdate(raw);updateMoneyPopups(raw);updateDayNight(dt);
+  ambientDust.rotation.y+=raw*.006;ambientDust.position.x=Math.sin(t*.08)*1.2;ambientDust.position.z=Math.cos(t*.06)*1.0;
+  updateSurveyDrone(dt,raw,t);reactorHalo.rotation.z=t*.65;reactorOrb.scale.setScalar(1+Math.sin(t*2.2)*.06);if(refinery.active)refineryRing.rotation.z+=raw*1.5;updateSkimmers(t);updateWorkshopVisuals(t);
+  if(dt>0){
+    simTime+=dt;energyAccum+=dt;industryAccum+=dt;eventAccum+=dt;crewSafetyAccum+=dt;crewPopulationAccum+=dt;surveyAvailabilityAccum+=dt;if(energyAccum>=.5){const step=energyAccum;energyAccum=0;updateEnergy(step)}if(industryAccum>=.10){const step=industryAccum;industryAccum=0;updateIndustry(step)}if(eventAccum>=.5){const step=eventAccum;eventAccum=0;updateEvents(step)}if(crewSafetyAccum>=.18){crewSafetyAccum%=.18;crewSafetyTick()}if(crewPopulationAccum>=1.25){crewPopulationAccum%=1.25;updateCrewPopulation()}if(surveyAvailabilityAccum>=1){surveyAvailabilityAccum%=1;updateSignalAvailability();refreshProgressionGates()}updateMines(dt,t);updateDispatcher(dt);for(const b of activeBots)updateActiveBot(b,dt);updateCrew(dt,t);
+    steamTimer+=raw;if(steamTimer>.82){steamTimer=0;for(const v of steamVents)if(Math.random()>.35)steamPuff(v.p)}
+    const wx=Math.cos(t*.07)*.035,wz=Math.sin(t*.06)*.035;
+    for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=raw;p.m.position.x+=(p.v.x+wx)*raw;p.m.position.y+=p.v.y*raw;p.m.position.z+=(p.v.z+wz)*raw;const growth=p.steam?1+raw*.5:p.dust?1+raw*.82:1+raw*.68;p.m.scale.multiplyScalar(growth);if(p.life<=0){releaseParticle(p);const last=particles.pop();if(i<particles.length)particles[i]=last}}
+  }
+  ui+=raw;sv+=raw;visualTick+=raw;signalVisualTick+=raw;labelTick+=raw;labelPosTick+=raw;
+  if(ui>.18){ui=0;hud();renderStrip();refreshManage()}
+  if(labelTick>.2){labelTick=0;labelsContentUpdate()}
+  if(signalVisualTick>.1){signalVisualTick=0;updateSignalVisuals(t)}
+  if(visualTick>1){visualTick=0;for(const m of mines)updateMineEvolution(m);updateBaseEvolution();updateRouteVisuals();updateIndustrialVisuals();for(const b of bots){b.beacon.material.emissiveIntensity=(b.state==='idle'?.45:b.state==='maintenance'?3.4:2)*(1+nightFactor*.35);b.headlight.material.emissiveIntensity=.35+nightFactor*(b.moving?1.8:.8)}}
+  if(sv>12){sv=0;save()}
+  if(labelPosTick>.05){labelPosTick%=.05;labelsPositionUpdate()}if(tracksDirty){tracks.instanceMatrix.needsUpdate=true;tracksDirty=false}renderer.render(scene,camera)
+}
+updateManage();renderStrip();hud();labelsContentUpdate();updateSignalVisuals(0);labelsPositionUpdate();cameraUpdate(0);setTimeout(()=>$('#loading').style.display='none',420);requestAnimationFrame(loop);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+addEventListener('beforeunload',save);
+// Arquitetura industrial: minas produzem lotes limitados; o dispatcher reserva origem e destino; a refinaria processa em tick de 100 ms; energia em tick de 500 ms.
+// Nenhuma fila cresce sem limite: entrada, saída, armazém, frota, partículas, trilhas, sinais, históricos e popups têm capacidade explícita.
+// Exploração usa 12 sinais fixos e um único drone por máquina de estados; labels são reposicionadas a 20 Hz e trilhas fazem upload no máximo uma vez por frame.
+</script>
+</body>
+</html>
