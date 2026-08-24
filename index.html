@@ -3,14 +3,17 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>OUTPOST-7 — Alien Mining Idle</title>
 <style>
 :root{--bg:#070912;--panel:rgba(8,11,20,.86);--line:rgba(255,255,255,.10);--text:#edf5ff;--muted:#91a1b5;--gold:#ffd277}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text)}canvas{display:block}button{font:inherit}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text)}body.fullscreen-fallback{position:fixed;inset:0;width:100vw;height:100dvh}canvas{display:block}button{font:inherit}
 #game{position:fixed;inset:0}#ui{position:fixed;inset:0;z-index:4;pointer-events:none}.panel{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(14px);box-shadow:0 14px 40px rgba(0,0,0,.28)}
 #top{position:absolute;left:18px;right:18px;top:16px;display:flex;align-items:stretch;gap:10px}.brand{padding:10px 14px;border-radius:15px;min-width:200px}.brand b{display:block;font-size:14px;letter-spacing:.18em}.brand small{font-size:10px;color:var(--muted)}
 .stat{padding:8px 12px;border-radius:15px;min-width:104px}.stat .k{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}.stat .v{font-size:17px;font-weight:850;margin-top:3px}
-#speed{margin-left:auto;display:flex;gap:6px;padding:7px;border-radius:15px;pointer-events:auto}#speed button,.buy{border:1px solid var(--line);border-radius:9px;cursor:pointer}#speed button{padding:8px 10px;background:rgba(255,255,255,.055);color:var(--text)}#speed button.active{background:#edf5ff;color:#080b11}
+#speed{margin-left:auto;display:flex;gap:6px;padding:7px;border-radius:15px;pointer-events:auto}#speed button,.buy{border:1px solid var(--line);border-radius:9px;cursor:pointer}#speed button{padding:8px 10px;background:rgba(255,255,255,.055);color:var(--text)}#speed button.active{background:#edf5ff;color:#080b11}#fullscreenBtn{min-width:40px;font-size:16px;line-height:1;padding-left:9px;padding-right:9px}#fullscreenBtn.fullscreen-active{background:#edf5ff;color:#080b11}
 #mission{position:absolute;left:18px;top:92px;width:282px;border-radius:16px;padding:14px}#mission h3{margin:0 0 9px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#c6d5e5}#mission .txt{font-size:13px;line-height:1.5}#mission .txt strong{color:var(--gold)}#mission .hint{font-size:10px;line-height:1.5;color:var(--muted);margin-top:10px}
 #manage{position:absolute;right:18px;top:92px;width:365px;max-height:calc(100vh - 120px);overflow:auto;border-radius:16px;padding:14px;pointer-events:auto}#manage::-webkit-scrollbar{width:8px}#manage::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
 .sel{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px}.sel .title{font-size:20px;font-weight:900}.sel .sub{font-size:10px;color:var(--muted)}.badge{padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.08);font-size:9px;white-space:nowrap}
@@ -104,7 +107,7 @@
     <div class="stat panel"><div class="k">Entregas</div><div class="v" id="deliveries">0</div></div>
     <div class="stat panel energyStat"><div class="k">Energia</div><div class="v" id="energy">0 / 0</div></div>
     <div class="stat panel"><div class="k">Exploração</div><div class="v" id="surveyHud">OFFLINE</div></div>
-    <div id="speed" class="panel"><button data-s="0">❚❚</button><button data-s="1" class="active">1×</button><button data-s="2">2×</button><button data-s="4">4×</button></div>
+    <div id="speed" class="panel"><button data-s="0">❚❚</button><button data-s="1" class="active">1×</button><button data-s="2">2×</button><button data-s="4">4×</button><button id="fullscreenBtn" type="button" title="Tela cheia" aria-label="Entrar em tela cheia" aria-pressed="false">⛶</button></div>
   </div>
   <div id="mission" class="panel"><h3>Missão da colônia</h3><div class="txt" id="objective">Extraia e entregue a primeira caixa de <strong>Basalto</strong>.</div><div class="hint">Novos depósitos não aparecem por botão: sinais surgem no planeta, o drone investiga e só então a operação pode ser instalada. Distância, indústria e logística passam a importar juntas.</div></div>
   <div id="eventFeed" class="panel"><div class="eventHead"><b>Acontecimentos</b><span class="eventKind" id="eventKind">ROTINA</span></div><div class="eventActive" id="eventActive">Nenhum evento extraordinário no momento.</div><div class="eventTimer" id="eventTimer">A colônia opera normalmente.</div><div class="eventHistory" id="eventHistory">Os eventos serão ocasionais e não exigem microgerenciamento.</div></div>
@@ -991,7 +994,25 @@ load();
 for(const m of mines){updateMineEvolution(m);updateStockVisual(m)}
 refreshTransportVisuals();updateBaseEvolution();updateCrewPopulation();updateRouteVisuals();updateIndustrialVisuals();updateWorkshopVisuals(0);restoreSurveyRuntimeAfterLoad();updateSignalAvailability();updateSignalVisuals(0);updateEnergy(.01);renderEventFeed();
 for(const b of bots){if(b.maintenanceDue)flagMaintenance(b);if(b.cargoUnits>0){activeBots.add(b);continue}requestDispatch(b,.03+(b.id%8)*.03)}
-document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>{state.speed=Number(b.dataset.s);document.querySelectorAll('#speed button').forEach(x=>x.classList.toggle('active',x===b))});
+// --- Tela cheia: Fullscreen API no desktop/Android + fallback imersivo em navegadores móveis que bloqueiam fullscreen de elementos. ---
+const fullscreenBtn=$('#fullscreenBtn');let fullscreenFallback=false;
+function nativeFullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement||null}
+function fullscreenActive(){return !!nativeFullscreenElement()||fullscreenFallback}
+function updateFullscreenButton(){if(!fullscreenBtn)return;const active=fullscreenActive();fullscreenBtn.classList.toggle('fullscreen-active',active);fullscreenBtn.setAttribute('aria-pressed',String(active));fullscreenBtn.setAttribute('aria-label',active?'Sair da tela cheia':'Entrar em tela cheia');fullscreenBtn.title=active?'Sair da tela cheia':'Tela cheia';fullscreenBtn.textContent=active?'↙':'⛶'}
+function resizeGameViewport(){const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);composer.setPixelRatio(POST_PIXEL_RATIO);composer.setSize(w,h);updateDustViewportScale();syncMobileLayout()}
+async function requestNativeFullscreen(){const el=document.documentElement;if(el.requestFullscreen){await el.requestFullscreen();return true}if(el.webkitRequestFullscreen){const r=el.webkitRequestFullscreen();if(r&&typeof r.then==='function')await r;return true}return false}
+async function exitNativeFullscreen(){if(document.exitFullscreen){await document.exitFullscreen();return true}if(document.webkitExitFullscreen){const r=document.webkitExitFullscreen();if(r&&typeof r.then==='function')await r;return true}return false}
+async function toggleFullscreen(){
+  if(nativeFullscreenElement()){try{await exitNativeFullscreen()}catch(e){}fullscreenFallback=false;document.body.classList.remove('fullscreen-fallback');updateFullscreenButton();setTimeout(resizeGameViewport,60);return}
+  if(fullscreenFallback){fullscreenFallback=false;document.body.classList.remove('fullscreen-fallback');updateFullscreenButton();resizeGameViewport();return}
+  let nativeOk=false;try{nativeOk=await requestNativeFullscreen()}catch(e){nativeOk=false}
+  if(!nativeOk&&!nativeFullscreenElement()){fullscreenFallback=true;document.body.classList.add('fullscreen-fallback');window.scrollTo(0,1);toast('Modo tela cheia ativado. Se o iPhone mantiver as barras do Safari, abra o jogo pela Tela de Início para usar a tela sem barras.')}
+  updateFullscreenButton();setTimeout(resizeGameViewport,60)
+}
+if(fullscreenBtn)fullscreenBtn.onclick=toggleFullscreen;
+for(const ev of ['fullscreenchange','webkitfullscreenchange'])document.addEventListener(ev,()=>{if(!nativeFullscreenElement())fullscreenFallback=false;document.body.classList.toggle('fullscreen-fallback',fullscreenFallback);updateFullscreenButton();setTimeout(resizeGameViewport,40)});
+
+document.querySelectorAll('#speed button[data-s]').forEach(b=>b.onclick=()=>{state.speed=Number(b.dataset.s);document.querySelectorAll('#speed button[data-s]').forEach(x=>x.classList.toggle('active',x===b))});
 
 let last=performance.now(),ui=.2,sv=0,visualTick=0,signalVisualTick=.1,labelTick=.2,labelPosTick=.05,crewSafetyAccum=0,eventAccum=0,crewPopulationAccum=0,surveyAvailabilityAccum=0,windVisualTime=0;
 function loop(now){
@@ -1011,7 +1032,7 @@ function loop(now){
   if(labelPosTick>.05){labelPosTick%=.05;labelsPositionUpdate()}if(tracksDirty){tracks.instanceMatrix.needsUpdate=true;tracksDirty=false}composer.render()
 }
 syncMobileLayout();updateManage();renderStrip();hud();labelsContentUpdate();updateSignalVisuals(0);labelsPositionUpdate();cameraUpdate(0);setTimeout(()=>$('#loading').style.display='none',420);requestAnimationFrame(loop);
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setPixelRatio(POST_PIXEL_RATIO);composer.setSize(innerWidth,innerHeight);updateDustViewportScale();syncMobileLayout()});
+addEventListener('resize',resizeGameViewport);if(window.visualViewport)window.visualViewport.addEventListener('resize',resizeGameViewport);
 addEventListener('beforeunload',save);
 // Arquitetura industrial: minas produzem lotes limitados; o dispatcher reserva origem e destino; a refinaria processa em tick de 100 ms; energia em tick de 500 ms.
 // Nenhuma fila cresce sem limite: entrada, saída, armazém, frota, buffers de partículas, trilhas, sinais, históricos e popups têm capacidade explícita. Bloom e passes especiais são fullscreen; EM/foco só ficam ativos quando necessários.
